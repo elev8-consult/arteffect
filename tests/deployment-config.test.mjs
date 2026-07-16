@@ -11,7 +11,8 @@ const execFileAsync = promisify(execFile);
 
 test("Railway config builds and starts the migrated app", async () => {
   const config = await readFile(new URL("railway.toml", root), "utf8");
-  assert.match(config, /buildCommand = "npm ci && npm run build"/);
+  assert.match(config, /buildCommand = "npm run build"/);
+  assert.match(config, /NIXPACKS_NODE_VERSION = "20"/);
   assert.match(config, /startCommand = "npm run payload:migrate && npm run start"/);
   assert.match(config, /healthcheckPath = "\/api\/health"/);
   assert.match(config, /restartPolicyType = "ON_FAILURE"/);
