@@ -30,19 +30,24 @@ export class ArtistNotFoundError extends Error {
 export async function getArtistDirectory(): Promise<ArtistDirectoryItem[]> {
   if (process.env.NODE_ENV !== "production") noStore();
 
-  if (!hasPayloadDatabase()) return staticArtistProfiles.map(toDirectoryItem);
+  if (!hasPayloadDatabase()) return staticArtistDirectory();
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "artists",
-    depth: 1,
-    limit: 100,
-    pagination: false,
-    sort: ["sortOrder", "name"],
-    where: { isPublished: { equals: true } }
-  });
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "artists",
+      depth: 1,
+      limit: 100,
+      pagination: false,
+      sort: ["sortOrder", "name"],
+      where: { isPublished: { equals: true } }
+    });
 
-  return result.docs.map(mapArtistDirectory);
+    return result.docs.map(mapArtistDirectory);
+  } catch (error) {
+    console.error("Payload artists directory read failed; using static fallback.", error);
+    return staticArtistDirectory();
+  }
 }
 
 export async function getArtistProfile(slug: string): Promise<ArtistProfile> {
@@ -195,6 +200,10 @@ function mapRepresentativeWork(doc: CmsRecord): ArtistWork {
 
 function mapFact(doc: CmsRecord) {
   return { label: text(doc.label, "Detail"), value: text(doc.value, "") };
+}
+
+function staticArtistDirectory(): ArtistDirectoryItem[] {
+  return staticArtistProfiles.map(toDirectoryItem);
 }
 
 function toDirectoryItem(profile: ArtistProfile): ArtistDirectoryItem {
