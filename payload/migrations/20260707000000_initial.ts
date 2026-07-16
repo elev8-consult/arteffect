@@ -489,6 +489,20 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "users_id" integer
     );
 
+    CREATE TABLE IF NOT EXISTS "payload_migrations" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "name" varchar,
+      "batch" numeric,
+      "updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
+      "created_at" timestamp(3) with time zone DEFAULT now() NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS "payload_kv" (
+      "id" serial PRIMARY KEY NOT NULL,
+      "key" varchar NOT NULL,
+      "data" jsonb NOT NULL
+    );
+
     DO $$ BEGIN
       ALTER TABLE "users_sessions" ADD CONSTRAINT "users_sessions_parent_id_fk"
         FOREIGN KEY ("_parent_id") REFERENCES "users"("id") ON DELETE cascade;
@@ -1016,11 +1030,14 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
     CREATE INDEX IF NOT EXISTS "payload_preferences_key_idx" ON "payload_preferences" ("key");
     CREATE INDEX IF NOT EXISTS "payload_preferences_rels_parent_idx" ON "payload_preferences_rels" ("parent_id");
     CREATE INDEX IF NOT EXISTS "payload_preferences_rels_users_idx" ON "payload_preferences_rels" ("users_id");
+    CREATE UNIQUE INDEX IF NOT EXISTS "payload_kv_key_idx" ON "payload_kv" ("key");
   `);
 }
 
 export async function down({ db }: MigrateDownArgs): Promise<void> {
   await db.execute(sql`
+    DROP TABLE IF EXISTS "payload_kv" CASCADE;
+    DROP TABLE IF EXISTS "payload_migrations" CASCADE;
     DROP TABLE IF EXISTS "payload_preferences_rels" CASCADE;
     DROP TABLE IF EXISTS "payload_preferences" CASCADE;
     DROP TABLE IF EXISTS "payload_locked_documents_rels" CASCADE;
