@@ -47,6 +47,9 @@ describe("Next.js scaffold contract", () => {
     assert.equal(dependencies["@payloadcms/next"], "^3.0.0");
     assert.equal(dependencies["@payloadcms/richtext-lexical"], "^3.0.0");
     assert.equal(dependencies.next, "16.2.10");
+    assert.equal(packageJson.dependencies["@tailwindcss/postcss"], "4.3.2");
+    assert.equal(packageJson.dependencies.tailwindcss, "4.3.2");
+    assert.equal(packageJson.dependencies.typescript, "6.0.3");
     assert.equal(dependencies.tailwindcss, "4.3.2");
     assert.equal(dependencies.typescript, "6.0.3");
     assert.equal(dependencies.eslint, "10.6.0");
