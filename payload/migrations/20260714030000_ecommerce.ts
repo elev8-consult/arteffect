@@ -2,7 +2,7 @@ import { sql, type MigrateDownArgs, type MigrateUpArgs } from "@payloadcms/db-po
 
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`
-    DO $$ BEGIN CREATE TYPE "enum_users_role" AS ENUM ('admin', 'customer'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+    DO $$ BEGIN CREATE TYPE "enum_users_role" AS ENUM ('admin', 'customer', 'editor'); EXCEPTION WHEN duplicate_object THEN null; END $$;
     DO $$ BEGIN CREATE TYPE "enum_coupons_discount_type" AS ENUM ('percentage', 'fixed', 'free-shipping'); EXCEPTION WHEN duplicate_object THEN null; END $$;
     DO $$ BEGIN CREATE TYPE "enum_coupons_currency" AS ENUM ('USD', 'LBP', 'EUR', 'GBP'); EXCEPTION WHEN duplicate_object THEN null; END $$;
     DO $$ BEGIN CREATE TYPE "enum_shipping_methods_currency" AS ENUM ('USD', 'LBP', 'EUR', 'GBP'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -23,6 +23,10 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
     DO $$ BEGIN CREATE TYPE "enum_inventory_movements_movement_type" AS ENUM ('reserve', 'release', 'sale', 'restock', 'adjustment'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
     ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "role" "enum_users_role" DEFAULT 'customer' NOT NULL;
+    DO $$ BEGIN
+      ALTER TYPE "enum_users_role" ADD VALUE IF NOT EXISTS 'editor';
+    EXCEPTION WHEN duplicate_object THEN null;
+    END $$;
     UPDATE "users" SET "role" = 'admin';
 
     CREATE TABLE IF NOT EXISTS "coupons" (

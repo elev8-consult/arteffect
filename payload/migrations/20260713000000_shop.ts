@@ -39,7 +39,7 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 
     ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "min_price" numeric DEFAULT 0;
     ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "max_price" numeric DEFAULT 0;
-    ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "availability" "enum_products_availability" DEFAULT 'out-of-stock' NOT NULL;
+    ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "availability" "enum_products_availability" DEFAULT 'out-of-stock';
     ALTER TABLE "products" ADD COLUMN IF NOT EXISTS "search_keywords" varchar;
 
     ALTER TABLE "products_variants" ADD COLUMN IF NOT EXISTS "color" "enum_products_variants_color";
@@ -59,35 +59,6 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "id" serial PRIMARY KEY NOT NULL
     );
 
-    -- Repair databases on which the previous version of this migration was partially applied.
-    ALTER TABLE "products" ALTER COLUMN "availability" DROP DEFAULT;
-    ALTER TABLE "products" ALTER COLUMN "availability" TYPE "enum_products_availability"
-      USING "availability"::text::"enum_products_availability";
-    ALTER TABLE "products" ALTER COLUMN "availability" SET DEFAULT 'out-of-stock';
-    ALTER TABLE "products" ALTER COLUMN "availability" SET NOT NULL;
-
-    ALTER TABLE "products_variants" ALTER COLUMN "color" TYPE "enum_products_variants_color"
-      USING "color"::text::"enum_products_variants_color";
-    ALTER TABLE "products_variants" ALTER COLUMN "size" TYPE "enum_products_variants_size"
-      USING "size"::text::"enum_products_variants_size";
-
-    ALTER TABLE "products_colors" ADD COLUMN IF NOT EXISTS "id" serial;
-    ALTER TABLE "products_colors" ALTER COLUMN "value" TYPE "enum_products_colors"
-      USING "value"::text::"enum_products_colors";
-    ALTER TABLE "products_sizes" ADD COLUMN IF NOT EXISTS "id" serial;
-    ALTER TABLE "products_sizes" ALTER COLUMN "value" TYPE "enum_products_sizes"
-      USING "value"::text::"enum_products_sizes";
-
-    DO $$ BEGIN
-      ALTER TABLE "products_colors" ADD CONSTRAINT "products_colors_pkey" PRIMARY KEY ("id");
-    EXCEPTION WHEN duplicate_object THEN null;
-    END $$;
-
-    DO $$ BEGIN
-      ALTER TABLE "products_sizes" ADD CONSTRAINT "products_sizes_pkey" PRIMARY KEY ("id");
-    EXCEPTION WHEN duplicate_object THEN null;
-    END $$;
-
     CREATE TABLE IF NOT EXISTS "users_rels" (
       "id" serial PRIMARY KEY NOT NULL,
       "order" integer,
@@ -95,6 +66,45 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "path" varchar NOT NULL,
       "products_id" integer
     );
+
+    -- Coerce legacy non-enum columns only when needed (safe on fresh DBs).
+    DO $$ BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'products'
+          AND column_name = 'availability'
+          AND udt_name <> 'enum_products_availability'
+      ) THEN
+        EXECUTE 'ALTER TABLE "products" ALTER COLUMN "availability" DROP DEFAULT';
+        EXECUTE 'ALTER TABLE "products" ALTER COLUMN "availability" TYPE "enum_products_availability" USING "availability"::text::"enum_products_availability"';
+        EXECUTE 'ALTER TABLE "products" ALTER COLUMN "availability" SET DEFAULT ''out-of-stock''';
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'products_variants'
+          AND column_name = 'color'
+          AND udt_name <> 'enum_products_variants_color'
+      ) THEN
+        EXECUTE 'ALTER TABLE "products_variants" ALTER COLUMN "color" TYPE "enum_products_variants_color" USING "color"::text::"enum_products_variants_color"';
+      END IF;
+
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'products_variants'
+          AND column_name = 'size'
+          AND udt_name <> 'enum_products_variants_size'
+      ) THEN
+        EXECUTE 'ALTER TABLE "products_variants" ALTER COLUMN "size" TYPE "enum_products_variants_size" USING "size"::text::"enum_products_variants_size"';
+      END IF;
+    END $$;
+
+    UPDATE "products" SET "availability" = 'out-of-stock' WHERE "availability" IS NULL;
+    ALTER TABLE "products" ALTER COLUMN "availability" SET DEFAULT 'out-of-stock';
+    ALTER TABLE "products" ALTER COLUMN "availability" SET NOT NULL;
 
     DO $$ BEGIN
       ALTER TABLE "products_colors" ADD CONSTRAINT "products_colors_parent_fk"
@@ -192,11 +202,13 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "min_price" = rollup."min_price",
       "max_price" = rollup."max_price",
       "total_inventory" = rollup."sellable_inventory",
-      "availability" = CASE
-        WHEN rollup."sellable_inventory" <= 0 THEN 'out-of-stock'
-        WHEN rollup."has_healthy_stock" THEN 'in-stock'
-        ELSE 'low-stock'
-      END
+      "availability" = (
+        CASE
+          WHEN rollup."sellable_inventory" <= 0 THEN 'out-of-stock'
+          WHEN rollup."has_healthy_stock" THEN 'in-stock'
+          ELSE 'low-stock'
+        END
+      )::"enum_products_availability"
     FROM (
       SELECT
         "_parent_id" AS "product_id",
@@ -218,7 +230,12 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       SELECT DISTINCT "_parent_id", "color"
       FROM "products_variants"
       WHERE "color" IS NOT NULL
-    ) AS variant;
+    ) AS variant
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "products_colors" existing
+      WHERE existing."parent_id" = variant."_parent_id"
+        AND existing."value"::text = variant."color"::text
+    );
 
     INSERT INTO "products_sizes" ("order", "parent_id", "value")
     SELECT row_number() OVER (PARTITION BY variant."_parent_id" ORDER BY variant."size") - 1,
@@ -227,7 +244,12 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       SELECT DISTINCT "_parent_id", "size"
       FROM "products_variants"
       WHERE "size" IS NOT NULL
-    ) AS variant;
+    ) AS variant
+    WHERE NOT EXISTS (
+      SELECT 1 FROM "products_sizes" existing
+      WHERE existing."parent_id" = variant."_parent_id"
+        AND existing."value"::text = variant."size"::text
+    );
 
     CREATE INDEX IF NOT EXISTS "products_min_price_idx" ON "products" ("min_price");
     CREATE INDEX IF NOT EXISTS "products_max_price_idx" ON "products" ("max_price");

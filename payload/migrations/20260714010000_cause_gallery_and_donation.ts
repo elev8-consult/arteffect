@@ -14,7 +14,7 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 
     DO $$ BEGIN
       ALTER TABLE "causes_gallery" ADD CONSTRAINT "causes_gallery_image_id_media_id_fk"
-        FOREIGN KEY ("image_id") REFERENCES "media"("id") ON DELETE set null;
+        FOREIGN KEY ("image_id") REFERENCES "media"("id") ON DELETE cascade;
     EXCEPTION WHEN duplicate_object THEN null;
     END $$;
 
