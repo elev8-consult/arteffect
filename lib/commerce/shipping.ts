@@ -1,4 +1,5 @@
 import type { Payload } from "payload";
+import type { ShippingMethod } from "@/payload-types";
 
 import { calculateCouponDiscount, calculateTotals } from "./calculator";
 import { CommerceError } from "./errors";
@@ -7,7 +8,7 @@ import type { CartLine, CommerceRecord } from "./types";
 import { countryCode } from "./validation";
 
 export type ShippingQuote = {
-  id: number | string;
+  id: number;
   code: string;
   name: string;
   description: string;
@@ -39,7 +40,7 @@ export async function shippingQuotes(
   });
   const profiles = new Set(input.lines.map((line) => line.shippingProfile));
 
-  const quotes = (result.docs as CommerceRecord[]).flatMap((method): ShippingQuote[] => {
+  const quotes = (result.docs as ShippingMethod[]).flatMap((method): ShippingQuote[] => {
     const countries = records(method.countries).map((entry) => String(entry.code || "").toUpperCase());
     if (!countries.includes(country) && !countries.includes("ZZ")) return [];
     const allowedProfiles = Array.isArray(method.allowedProfiles) ? method.allowedProfiles.map(String) : [];
@@ -88,6 +89,8 @@ export function totalsWithShipping(
   return calculateTotals(lines, discount, quote.amount);
 }
 
-function records(value: unknown): CommerceRecord[] {
-  return Array.isArray(value) ? value.filter((entry): entry is CommerceRecord => Boolean(entry && typeof entry === "object")) : [];
+function records(value: unknown): Array<Record<string, unknown>> {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is Record<string, unknown> => Boolean(entry && typeof entry === "object"))
+    : [];
 }

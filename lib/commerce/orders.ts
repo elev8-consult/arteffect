@@ -5,7 +5,7 @@ import { isAdmin } from "@/payload/access";
 import { CommerceError } from "./errors";
 import { releaseOrderInventory } from "./inventory";
 import { accessTokenMatches, requireCartToken } from "./tokens";
-import { relationshipID, type CommerceRecord } from "./types";
+import { asCommerceRecord, relationshipID, type CommerceRecord } from "./types";
 
 export async function getOrder(headers: Headers, orderReference: unknown) {
   const { order } = await authorizedOrder(headers, orderReference);
@@ -24,7 +24,7 @@ export async function cancelOrder(headers: Headers, orderReference: unknown) {
     id: order.id,
     depth: 2,
     overrideAccess: true
-  }) as CommerceRecord;
+  }) as unknown as CommerceRecord;
   return publicOrder(updated);
 }
 
@@ -43,7 +43,7 @@ async function authorizedOrder(headers: Headers, orderReference: unknown) {
     showHiddenFields: true,
     where: { orderNumber: { equals: orderReference } }
   });
-  const order = result.docs[0] as CommerceRecord | undefined;
+  const order = result.docs[0] ? asCommerceRecord(result.docs[0]) : undefined;
   if (!order) throw new CommerceError("ORDER_NOT_FOUND", "The order was not found.", 404);
   const { user } = await payload.auth({ headers }).catch(() => ({ user: null }));
   const customerID = relationshipID(order.customer);

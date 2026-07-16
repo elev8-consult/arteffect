@@ -1,7 +1,7 @@
 import type { Payload } from "payload";
 
 import { CommerceError } from "./errors";
-import { relationshipID, type CartLine, type CommerceRecord } from "./types";
+import { asCommerceRecords, numericRelationshipID, type CartLine, type CommerceRecord } from "./types";
 
 type QueryResult<Row> = { rowCount: number | null; rows: Row[] };
 type DatabaseClient = {
@@ -10,7 +10,7 @@ type DatabaseClient = {
 };
 
 export type InventoryReservation = {
-  productID: number | string;
+  productID: number;
   variantID: string;
   sku: string;
   quantity: number;
@@ -24,7 +24,7 @@ export async function reserveInventory(payload: Payload, lines: CartLine[]) {
   try {
     await client.query("BEGIN");
     for (const line of lines) {
-      const productID = relationshipID(line.product);
+      const productID = numericRelationshipID(line.product);
       if (productID === undefined) throw new CommerceError("INVALID_CART_ITEM", "A cart item has no product reference.", 409);
       const result = await client.query<{ inventory: number; reserved: number; sku: string }>(
         `UPDATE products_variants
@@ -135,7 +135,7 @@ export async function releaseOrderInventory(
           reservation.productID,
           reservation.variantID,
           reservation.sku,
-          relationshipID(order.cart),
+          numericRelationshipID(order.cart),
           order.id,
           reservation.quantity,
           reservation.inventoryAfter,
@@ -170,7 +170,7 @@ export async function expireStaleOrders(payload: Payload) {
       ]
     }
   });
-  for (const order of result.docs as CommerceRecord[]) {
+  for (const order of asCommerceRecords(result.docs)) {
     await releaseOrderInventory(payload, order, "expired");
   }
 }
@@ -207,8 +207,8 @@ export async function recordInventoryMovements(
   payload: Payload,
   reservations: InventoryReservation[],
   data: {
-    cartID: number | string;
-    orderID: number | string;
+    cartID: number;
+    orderID: number;
     orderNumber: string;
     movementType: "reserve" | "release" | "sale";
   }
@@ -237,7 +237,7 @@ export function reservationsFromOrder(order: CommerceRecord): InventoryReservati
   return order.items.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
     const line = item as CartLine;
-    const productID = relationshipID(line.product);
+    const productID = numericRelationshipID(line.product);
     if (productID === undefined) return [];
     return [{
       productID,
@@ -250,7 +250,7 @@ export function reservationsFromOrder(order: CommerceRecord): InventoryReservati
   });
 }
 
-async function refreshInventoryRollups(payload: Payload, productIDs: Array<number | string>) {
+async function refreshInventoryRollups(payload: Payload, productIDs: number[]) {
   const unique = [...new Set(productIDs)];
   if (!unique.length) return;
   await payload.db.pool.query(

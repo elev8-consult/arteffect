@@ -9,7 +9,7 @@ import { expireStaleOrders, recordInventoryMovements, releaseInventory, reserveI
 import { listPaymentProviders } from "./payments/registry";
 import { publicOrder } from "./orders";
 import { shippingQuotes, selectShippingQuote, totalsWithShipping } from "./shipping";
-import { relationshipID, type CommerceRecord } from "./types";
+import { asCommerceRecord, numericRelationshipID, payloadCartLine, relationshipID, type CommerceRecord } from "./types";
 import { checkoutAddress, emailAddress } from "./validation";
 
 const reservationLifetimeMilliseconds = 30 * 60 * 1000;
@@ -67,17 +67,17 @@ export async function checkout(headers: Headers, input: Record<string, unknown>)
       showHiddenFields: true,
       data: {
         orderNumber,
-        cart: cart.id,
-        customer: user?.id ?? relationshipID(cart.customer),
+        cart: numericRelationshipID(cart.id),
+        customer: numericRelationshipID(user?.id) ?? numericRelationshipID(cart.customer),
         customerEmail,
         guestTokenHash: String(cart.guestTokenHash),
         status: "pending-payment",
         paymentStatus: "not-started",
         inventoryStatus: "reserved",
-        items: lines,
+        items: lines.map(payloadCartLine),
         shippingAddress,
         billingAddress,
-        coupon: coupon?.id,
+        coupon: numericRelationshipID(coupon?.id),
         couponCode: coupon ? String(coupon.code) : undefined,
         shippingMethod: shipping.id,
         shippingMethodCode: shipping.code,
@@ -86,10 +86,10 @@ export async function checkout(headers: Headers, input: Record<string, unknown>)
         currency,
         reservationExpiresAt
       }
-    }) as CommerceRecord;
+    } as Parameters<Payload["create"]>[0]) as unknown as CommerceRecord;
     await recordInventoryMovements(payload, reservations, {
-      cartID: cart.id,
-      orderID: order.id,
+      cartID: numericRelationshipID(cart.id) ?? 0,
+      orderID: numericRelationshipID(order.id) ?? 0,
       orderNumber,
       movementType: "reserve"
     });
@@ -101,8 +101,8 @@ export async function checkout(headers: Headers, input: Record<string, unknown>)
       data: {
         email: customerEmail,
         status: "converted",
-        items: lines,
-        coupon: coupon?.id ?? null,
+        items: lines.map(payloadCartLine),
+        coupon: numericRelationshipID(coupon?.id) ?? null,
         couponCode: coupon ? String(coupon.code) : null,
         shippingMethod: shipping.id,
         shippingEstimate: {
@@ -116,7 +116,7 @@ export async function checkout(headers: Headers, input: Record<string, unknown>)
         ...totals,
         currency
       }
-    });
+    }) as unknown as CommerceRecord;
   } catch (error) {
     if (reservations.length) await releaseInventory(payload, reservations).catch((releaseError) => {
       console.error("Failed to compensate an inventory reservation.", releaseError);
@@ -146,7 +146,7 @@ async function existingOrder(payload: Payload, cartID: number | string) {
     overrideAccess: true,
     where: { cart: { equals: cartID } }
   });
-  const order = result.docs[0] as CommerceRecord | undefined;
+  const order = result.docs[0] ? asCommerceRecord(result.docs[0]) : undefined;
   if (!order) throw new CommerceError("ORDER_NOT_FOUND", "The converted cart has no order.", 409);
   return {
     order: publicOrder(order),
@@ -157,7 +157,7 @@ async function existingOrder(payload: Payload, cartID: number | string) {
 }
 
 async function cartCoupon(payload: Payload, cart: CommerceRecord) {
-  const couponID = relationshipID(cart.coupon);
+  const couponID = numericRelationshipID(cart.coupon);
   if (couponID === undefined) return undefined;
   return await payload.findByID({
     collection: "coupons",
@@ -165,7 +165,7 @@ async function cartCoupon(payload: Payload, cart: CommerceRecord) {
     depth: 0,
     overrideAccess: true,
     disableErrors: true
-  }) as CommerceRecord | null || undefined;
+  }) as unknown as CommerceRecord | null || undefined;
 }
 
 function createOrderNumber() {

@@ -14,7 +14,16 @@ import {
   hashAccessToken,
   requireCartToken
 } from "./tokens";
-import { relationshipID, type CartLine, type CommerceRecord } from "./types";
+import {
+  asCommerceRecord,
+  asCommerceRecords,
+  numericRelationshipID,
+  payloadCartLine,
+  relationshipID,
+  type CartLine,
+  type CommerceRecord,
+  type PayloadShippingEstimate
+} from "./types";
 import { couponCode, documentID, positiveInteger } from "./validation";
 
 const cartLifetimeMilliseconds = 30 * 24 * 60 * 60 * 1000;
@@ -29,7 +38,7 @@ export async function createCart(headers: Headers) {
     overrideAccess: true,
     showHiddenFields: true,
     data: {
-      customer: user?.id,
+      customer: numericUserID(user),
       guestTokenHash: hashAccessToken(token),
       status: "active",
       items: [],
@@ -44,7 +53,7 @@ export async function createCart(headers: Headers) {
     }
   });
 
-  return { cart: publicCart(cart as CommerceRecord), token };
+  return { cart: publicCart(asCommerceRecord(cart)), token };
 }
 
 export async function getCart(headers: Headers, cartReference: unknown) {
@@ -115,7 +124,7 @@ export async function applyCartCoupon(headers: Headers, cartReference: unknown, 
     overrideAccess: true,
     where: { code: { equals: code } }
   });
-  const coupon = result.docs[0] as CommerceRecord | undefined;
+  const coupon = result.docs[0] ? asCommerceRecord(result.docs[0]) : undefined;
   if (!coupon) throw new CommerceError("COUPON_NOT_FOUND", "That coupon code was not found.", 404);
   return updateRepricedCart(payload, { ...cart, coupon: coupon.id, couponCode: code }, cartLines(cart.items), coupon);
 }
@@ -146,7 +155,7 @@ export async function estimateCartShipping(
     depth: 1,
     overrideAccess: true,
     data: {
-      items: lines,
+      items: lines.map(payloadCartLine),
       shippingMethod: selected.id,
       shippingEstimate: {
         country,
@@ -162,7 +171,7 @@ export async function estimateCartShipping(
     }
   });
 
-  return { cart: publicCart(updated as CommerceRecord), quotes };
+  return { cart: publicCart(asCommerceRecord(updated)), quotes };
 }
 
 export async function authorizedCart(headers: Headers, cartReference: unknown) {
@@ -177,7 +186,7 @@ export async function authorizedCart(headers: Headers, cartReference: unknown) {
       overrideAccess: true,
       showHiddenFields: true,
       disableErrors: true
-    }) as CommerceRecord | null;
+    }) as unknown as CommerceRecord | null;
   } catch {
     cart = null;
   }
@@ -197,7 +206,7 @@ export async function authorizedCart(headers: Headers, cartReference: unknown) {
 
 export async function repriceLines(payload: Payload, lines: CartLine[]) {
   if (!lines.length) return [];
-  const productIDs = [...new Set(lines.map((line) => relationshipID(line.product)).filter((id): id is number | string => id !== undefined))];
+  const productIDs = [...new Set(lines.map((line) => numericRelationshipID(line.product)).filter((id): id is number => id !== undefined))];
   const result = await payload.find({
     collection: "products",
     depth: 1,
@@ -206,7 +215,7 @@ export async function repriceLines(payload: Payload, lines: CartLine[]) {
     overrideAccess: true,
     where: { and: [{ id: { in: productIDs } }, { isPublished: { equals: true } }] }
   });
-  const products = new Map((result.docs as CommerceRecord[]).map((product) => [String(product.id), product]));
+  const products = new Map(asCommerceRecords(result.docs).map((product) => [String(product.id), product]));
   let currency: CommerceCurrency | undefined;
 
   return lines.map((line) => {
@@ -259,8 +268,8 @@ async function updateRepricedCart(
   const estimate = cart.shippingEstimate && typeof cart.shippingEstimate === "object"
     ? cart.shippingEstimate as Record<string, unknown>
     : undefined;
-  let shippingEstimate: Record<string, unknown> | null = estimate ?? null;
-  let shippingMethod: number | string | null = relationshipID(cart.shippingMethod) ?? null;
+  let shippingEstimate: PayloadShippingEstimate | undefined = estimate as PayloadShippingEstimate | undefined;
+  let shippingMethod: number | null | undefined = numericRelationshipID(cart.shippingMethod);
   let totals;
   if (lines.length && estimate?.country) {
     try {
@@ -275,14 +284,14 @@ async function updateRepricedCart(
       // A cart edit may change its shipping profiles or free-shipping threshold.
       // Preserve the item mutation and ask for a fresh estimate instead of
       // leaving the cart stuck behind an obsolete method.
-      shippingMethod = null;
-      shippingEstimate = null;
+      shippingMethod = undefined;
+      shippingEstimate = undefined;
       const discount = calculateCouponDiscount(coupon, lines, currency, subtotal, 0);
       totals = calculateTotals(lines, discount, 0);
     }
   } else {
-    shippingMethod = null;
-    shippingEstimate = null;
+    shippingMethod = undefined;
+    shippingEstimate = undefined;
     const discount = calculateCouponDiscount(coupon, lines, currency, subtotal, 0);
     totals = calculateTotals(lines, discount, 0);
   }
@@ -292,8 +301,8 @@ async function updateRepricedCart(
     depth: 1,
     overrideAccess: true,
     data: {
-      items: lines,
-      coupon: coupon?.id ?? null,
+      items: lines.map(payloadCartLine),
+      coupon: numericRelationshipID(coupon?.id),
       couponCode: coupon ? String(coupon.code) : null,
       shippingMethod,
       shippingEstimate,
@@ -302,19 +311,21 @@ async function updateRepricedCart(
       expiresAt: new Date(Date.now() + cartLifetimeMilliseconds).toISOString()
     }
   });
-  return publicCart(updated as CommerceRecord);
+  return publicCart(asCommerceRecord(updated));
 }
 
 async function couponForCart(payload: Payload, cart: CommerceRecord) {
   const id = relationshipID(cart.coupon);
   if (id === undefined) return undefined;
+  const couponID = numericRelationshipID(id);
+  if (couponID === undefined) return undefined;
   return await payload.findByID({
     collection: "coupons",
-    id,
+    id: couponID,
     depth: 0,
     overrideAccess: true,
     disableErrors: true
-  }) as CommerceRecord | null || undefined;
+  }) as unknown as CommerceRecord | null || undefined;
 }
 
 async function resolveProduct(payload: Payload, reference: number | string) {
@@ -328,7 +339,7 @@ async function resolveProduct(payload: Payload, reference: number | string) {
     overrideAccess: true,
     where: { and: [{ isPublished: { equals: true } }, { or: clauses }] }
   });
-  const product = result.docs[0] as CommerceRecord | undefined;
+  const product = result.docs[0] ? asCommerceRecord(result.docs[0]) : undefined;
   if (!product) throw new CommerceError("PRODUCT_NOT_FOUND", "The product was not found.", 404);
   return product;
 }
@@ -349,7 +360,7 @@ function assertSellable(product: CommerceRecord, variant: CommerceRecord, quanti
   }
   const drop = product.drop;
   if (drop && typeof drop === "object") {
-    const record = drop as CommerceRecord;
+    const record = drop as unknown as CommerceRecord;
     if (["draft", "preview", "sold-out", "closed"].includes(String(record.status))) {
       throw new CommerceError("DROP_UNAVAILABLE", "This product's drop is not open for orders.", 409);
     }
@@ -401,8 +412,13 @@ async function commercePayload() {
 async function authenticatedUser(payload: Payload, headers: Headers) {
   try {
     const { user } = await payload.auth({ headers });
-    return user as CommerceRecord | null | undefined;
+    return user as unknown as CommerceRecord | null | undefined;
   } catch {
     return undefined;
   }
+}
+
+function numericUserID(user: CommerceRecord | null | undefined) {
+  if (!user) return undefined;
+  return numericRelationshipID(user.id);
 }

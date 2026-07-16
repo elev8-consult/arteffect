@@ -1,7 +1,8 @@
 import { mapShopProduct } from "@/lib/cms/products";
+import type { Product } from "@/payload-types";
 
 import { authorizedCart } from "./cart";
-import { relationshipID, type CommerceRecord } from "./types";
+import { asCommerceRecord, relationshipID } from "./types";
 
 export async function getCartUpsells(headers: Headers, cartReference: unknown) {
   const { payload, cart } = await authorizedCart(headers, cartReference);
@@ -19,7 +20,7 @@ export async function getCartUpsells(headers: Headers, cartReference: unknown) {
     overrideAccess: true,
     where: { id: { in: productIDs } }
   });
-  const explicitIDs = (sources.docs as CommerceRecord[]).flatMap((product) =>
+  const explicitIDs = (sources.docs as Product[]).flatMap((product) =>
     Array.isArray(product.upsells)
       ? product.upsells.map(relationshipID).filter((id): id is number | string => id !== undefined)
       : []
@@ -40,9 +41,9 @@ export async function getCartUpsells(headers: Headers, cartReference: unknown) {
       ]
     }
   });
-  return (result.docs as CommerceRecord[])
+  return (result.docs as Product[])
     .filter((product) => !excluded.has(String(product.id)))
     .sort((left, right) => Number(explicitIDs.some((id) => String(id) === String(right.id))) - Number(explicitIDs.some((id) => String(id) === String(left.id))))
     .slice(0, 4)
-    .map(mapShopProduct);
+    .map((product) => mapShopProduct(asCommerceRecord(product)));
 }

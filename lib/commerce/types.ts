@@ -1,7 +1,10 @@
+import type { Cart } from "@/payload-types";
 import type { CommerceCurrency } from "./money";
 
 export type RelationshipValue = number | string | { id?: number | string } | null;
 export type CommerceRecord = Record<string, unknown> & { id: number | string };
+export type PayloadCartLine = NonNullable<Cart["items"]>[number];
+export type PayloadShippingEstimate = NonNullable<Cart["shippingEstimate"]>;
 
 export type CartLine = {
   id?: string;
@@ -45,4 +48,29 @@ export function relationshipID(value: unknown): number | string | undefined {
     if (typeof id === "number" || typeof id === "string") return id;
   }
   return undefined;
+}
+
+export function numericRelationshipID(value: unknown): number | undefined {
+  const id = relationshipID(value);
+  if (typeof id === "number") return id;
+  if (typeof id === "string" && /^\d+$/.test(id)) return Number(id);
+  return undefined;
+}
+
+export function payloadCartLine(line: CartLine): PayloadCartLine {
+  const product = numericRelationshipID(line.product);
+  if (product === undefined) throw new TypeError("Expected a numeric product relationship ID.");
+  return {
+    ...line,
+    product,
+    id: line.id ?? undefined
+  };
+}
+
+export function asCommerceRecord(value: { id: number | string }) {
+  return value as unknown as CommerceRecord;
+}
+
+export function asCommerceRecords<T extends { id: number | string }>(values: T[]) {
+  return values as unknown as CommerceRecord[];
 }
