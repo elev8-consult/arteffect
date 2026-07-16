@@ -1,4 +1,4 @@
-import { resolveSiteUrl } from "@/lib/site-url";
+import { resolveSiteUrl } from "./site-url";
 
 export const siteConfig = {
   name: "ArtEffect",

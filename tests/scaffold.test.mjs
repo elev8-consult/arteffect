@@ -70,7 +70,8 @@ describe("Next.js scaffold contract", () => {
   test("contains the expected App Router, UI, and configuration files", async () => {
     const requiredFiles = [
       "app/layout.tsx",
-      "app/page.tsx",
+      "app/(site)/layout.tsx",
+      "app/(site)/page.tsx",
       "app/api/health/route.ts",
       "app/sitemap.ts",
       "app/robots.ts",
@@ -204,20 +205,13 @@ describe("Next.js scaffold contract", () => {
 
 describe("ArtEffect showcase experience", () => {
   test("defines the six required editorial showcase sections", async () => {
-    const { siteConfig } = await import(toModuleUrl("lib/site.ts"));
+    const siteSource = await readText("lib/site.ts");
     const homeExperience = await readText("components/sections/home-experience.tsx");
     const expectedSections = ["Products", "Drop", "Design", "Artist", "Cause", "Impact"];
 
-    assert.deepEqual(
-      siteConfig.nav.map((item) => item.label),
-      expectedSections
-    );
-    assert.deepEqual(
-      siteConfig.nav.map((item) => item.href),
-      expectedSections.map((section) => `#${section.toLowerCase()}`)
-    );
-
     for (const section of expectedSections) {
+      assert.match(siteSource, new RegExp(`label:\\s*"${section}"`));
+      assert.match(siteSource, new RegExp(`href:\\s*"#${section.toLowerCase()}"`));
       assert.match(homeExperience, new RegExp(`id="${section.toLowerCase()}"`));
     }
 

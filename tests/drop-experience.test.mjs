@@ -12,7 +12,7 @@ async function source(...segments) {
 
 describe("Drop editorial showcase", () => {
   test("renders a dedicated, indexed drop route with resilient metadata and collection schema", async () => {
-    const page = await source("app", "drops", "[slug]", "page.tsx");
+    const page = await source("app", "(site)", "drops", "[slug]", "page.tsx");
 
     assert.match(page, /export async function generateMetadata/);
     assert.match(page, /alternates: \{ canonical: `\/drops\/\$\{drop\.slug\}` \}/);

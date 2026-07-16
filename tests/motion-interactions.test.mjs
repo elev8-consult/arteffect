@@ -27,7 +27,7 @@ describe("motion and interaction system", () => {
 
   test("wraps route changes in a subtle, reduced-motion-safe page transition", async () => {
     const [layout, transition] = await Promise.all([
-      source("app", "layout.tsx"),
+      source("app", "(site)", "layout.tsx"),
       source("components", "motion", "page-transition.tsx")
     ]);
 

@@ -46,7 +46,7 @@ describe("home showcase experience", () => {
     const [experience, showcase, page] = await Promise.all([
       source("components", "sections", "home-experience.tsx"),
       source("lib", "cms", "showcase.ts"),
-      source("app", "page.tsx")
+      source("app", "(site)", "page.tsx")
     ]);
 
     assert.doesNotMatch(experience, /const testimonials = \[/);
@@ -81,8 +81,8 @@ describe("home showcase experience", () => {
 
   test("loads showcase content through the server page and retains the shared minimal footer", async () => {
     const [page, layout, footer] = await Promise.all([
-      source("app", "page.tsx"),
-      source("app", "layout.tsx"),
+      source("app", "(site)", "page.tsx"),
+      source("app", "(site)", "layout.tsx"),
       source("components", "layout", "site-footer.tsx")
     ]);
 

@@ -42,8 +42,8 @@ async function loadStaticCauses() {
 describe("Cause and NGO showcase", () => {
   test("ships an indexed NGO directory and a resilient, structured profile route", async () => {
     const [directory, profile, sitemap] = await Promise.all([
-      source("app", "causes", "page.tsx"),
-      source("app", "causes", "[slug]", "page.tsx"),
+      source("app", "(site)", "causes", "page.tsx"),
+      source("app", "(site)", "causes", "[slug]", "page.tsx"),
       source("app", "sitemap.ts")
     ]);
 

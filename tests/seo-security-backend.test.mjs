@@ -10,14 +10,14 @@ const source = (...segments) => readFile(join(rootDir, ...segments), "utf8");
 describe("SEO, caching, and security backend", () => {
   test("publishes canonical social metadata, structured data, sitemap, and private crawler rules", async () => {
     const [layout, sitemap, robots, product, artist, cause, drop, journal] = await Promise.all([
-      source("app", "layout.tsx"),
+      source("app", "(site)", "layout.tsx"),
       source("app", "sitemap.ts"),
       source("app", "robots.ts"),
-      source("app", "shop", "[slug]", "page.tsx"),
-      source("app", "artists", "[slug]", "page.tsx"),
-      source("app", "causes", "[slug]", "page.tsx"),
-      source("app", "drops", "[slug]", "page.tsx"),
-      source("app", "journal", "[slug]", "page.tsx")
+      source("app", "(site)", "shop", "[slug]", "page.tsx"),
+      source("app", "(site)", "artists", "[slug]", "page.tsx"),
+      source("app", "(site)", "causes", "[slug]", "page.tsx"),
+      source("app", "(site)", "drops", "[slug]", "page.tsx"),
+      source("app", "(site)", "journal", "[slug]", "page.tsx")
     ]);
 
     assert.match(layout, /alternates:\s*\{[\s\S]*?canonical:\s*"\/"/);

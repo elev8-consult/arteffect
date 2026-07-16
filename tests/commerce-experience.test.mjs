@@ -21,7 +21,7 @@ describe("Commerce experience", () => {
     const [context, drawer, checkoutPage, checkoutExperience] = await Promise.all([
       source("components", "cart", "cart-context.tsx"),
       source("components", "cart", "cart-drawer.tsx"),
-      source("app", "checkout", "page.tsx"),
+      source("app", "(site)", "checkout", "page.tsx"),
       source("components", "cart", "checkout-experience.tsx")
     ]);
     assert.match(context, /\/coupon`/);

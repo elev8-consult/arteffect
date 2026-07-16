@@ -12,7 +12,7 @@ async function source(...segments) {
 
 describe("Product detail experience", () => {
   test("provides product metadata and safe Product schema markup", async () => {
-    const page = await source("app", "shop", "[slug]", "page.tsx");
+    const page = await source("app", "(site)", "shop", "[slug]", "page.tsx");
 
     assert.match(page, /export async function generateMetadata/);
     assert.match(page, /alternates: \{ canonical: `\/shop\/\$\{product\.slug\}` \}/);

@@ -10,12 +10,12 @@ const readText = (...segments) => readFile(join(rootDir, ...segments), "utf8");
 describe("About, Journal, Contact, FAQ, and Account backend", () => {
   test("ships user-facing routes for every advertised content and account experience", async () => {
     const routes = [
-      ["app/about/page.tsx", /getAboutContent/],
-      ["app/journal/page.tsx", /getJournalPage/],
-      ["app/journal/[slug]/page.tsx", /getJournalArticle/],
-      ["app/contact/page.tsx", /getContactContent/],
-      ["app/faq/page.tsx", /getFAQs/],
-      ["app/account/page.tsx", /AccountExperience/]
+      ["app/(site)/about/page.tsx", /getAboutContent/],
+      ["app/(site)/journal/page.tsx", /getJournalPage/],
+      ["app/(site)/journal/[slug]/page.tsx", /getJournalArticle/],
+      ["app/(site)/contact/page.tsx", /getContactContent/],
+      ["app/(site)/faq/page.tsx", /getFAQs/],
+      ["app/(site)/account/page.tsx", /AccountExperience/]
     ];
 
     for (const [path, pattern] of routes) {

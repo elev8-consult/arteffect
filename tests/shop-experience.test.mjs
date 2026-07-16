@@ -13,7 +13,7 @@ async function source(...segments) {
 describe("Shop showcase experience", () => {
   test("server-renders the product collection with metadata and structured data", async () => {
     const [page, sitemap] = await Promise.all([
-      source("app", "shop", "page.tsx"),
+      source("app", "(site)", "shop", "page.tsx"),
       source("app", "sitemap.ts")
     ]);
 

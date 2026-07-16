@@ -41,8 +41,8 @@ async function loadStaticArtists() {
 describe("Artist showcase experience", () => {
   test("ships an artist directory and resilient, indexed profile route", async () => {
     const [directory, profile] = await Promise.all([
-      source("app", "artists", "page.tsx"),
-      source("app", "artists", "[slug]", "page.tsx")
+      source("app", "(site)", "artists", "page.tsx"),
+      source("app", "(site)", "artists", "[slug]", "page.tsx")
     ]);
 
     assert.match(directory, /await getArtistDirectory\(\)/);

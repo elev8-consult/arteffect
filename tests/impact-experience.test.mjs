@@ -44,7 +44,7 @@ async function loadImpactDashboard({ hasDatabase, responses = [] }) {
 describe("Impact ledger showcase", () => {
   test("ships an indexed impact route with animated totals, purchase timeline, public ledger, and per-cause totals", async () => {
     const [page, dashboard, sitemap] = await Promise.all([
-      source("app", "impact", "page.tsx"),
+      source("app", "(site)", "impact", "page.tsx"),
       source("components", "impact", "impact-dashboard.tsx"),
       source("app", "sitemap.ts")
     ]);

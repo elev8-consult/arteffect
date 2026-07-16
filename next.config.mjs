@@ -1,6 +1,6 @@
 import { withPayload } from "@payloadcms/next/withPayload";
 
-const contentSecurityPolicy = [
+const storefrontContentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "connect-src 'self'",
@@ -17,8 +17,25 @@ const contentSecurityPolicy = [
   ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : [])
 ].join("; ");
 
-const securityHeaders = [
-  { key: "Content-Security-Policy", value: contentSecurityPolicy },
+// Payload Admin needs a looser policy for its bundled UI runtime.
+const adminContentSecurityPolicy = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "connect-src 'self'",
+  "font-src 'self' data:",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  "frame-src 'self'",
+  "img-src 'self' data: blob: https:",
+  "media-src 'self' blob:",
+  "object-src 'none'",
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  "style-src 'self' 'unsafe-inline'",
+  "worker-src 'self' blob:",
+  ...(process.env.NODE_ENV === "production" ? ["upgrade-insecure-requests"] : [])
+].join("; ");
+
+const sharedSecurityHeaders = [
   { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "Permissions-Policy", value: "camera=(), geolocation=(), microphone=(), payment=(self), usb=()" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -36,8 +53,18 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: "/admin/:path*",
+        headers: [
+          { key: "Content-Security-Policy", value: adminContentSecurityPolicy },
+          ...sharedSecurityHeaders
+        ]
+      },
+      {
         source: "/:path*",
-        headers: securityHeaders
+        headers: [
+          { key: "Content-Security-Policy", value: storefrontContentSecurityPolicy },
+          ...sharedSecurityHeaders
+        ]
       },
       {
         source: "/media/:path*",
