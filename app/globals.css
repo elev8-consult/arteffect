@@ -1,0 +1,200 @@
+@import "tailwindcss";
+
+:root {
+  --ae-forest: #192b1e;
+  --ae-forest-soft: #24392a;
+  --ae-onyx: #0e0e0e;
+  --ae-parchment: #f3efe7;
+  --ae-fog: #e6e1d9;
+  --ae-stone: #9e9588;
+  --ae-gilt: #a08b5a;
+  --ae-white: #fffaf2;
+  --font-inter: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-cormorant: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+
+  --background: var(--ae-parchment);
+  --foreground: var(--ae-onyx);
+  --card: var(--ae-white);
+  --card-foreground: var(--ae-onyx);
+  --popover: var(--ae-white);
+  --popover-foreground: var(--ae-onyx);
+  --primary: var(--ae-forest);
+  --primary-foreground: var(--ae-white);
+  --secondary: var(--ae-fog);
+  --secondary-foreground: var(--ae-forest);
+  --muted: var(--ae-fog);
+  --muted-foreground: #675f54;
+  --accent: var(--ae-gilt);
+  --accent-foreground: var(--ae-onyx);
+  --destructive: #8a1f11;
+  --destructive-foreground: var(--ae-white);
+  --border: #d7d0c4;
+  --input: #d7d0c4;
+  --ring: var(--ae-gilt);
+  --radius: 0.5rem;
+  --ae-space-section: clamp(4.5rem, 11vw, 9rem);
+  --ae-shadow-card: 0 18px 48px rgba(25, 43, 30, 0.08);
+  --ae-shadow-drawer: -24px 0 56px rgba(14, 14, 14, 0.2);
+  --ae-duration-fast: 160ms;
+  --ae-duration-base: 280ms;
+  --ae-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-cormorant);
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  min-height: 100%;
+  scroll-behavior: smooth;
+  background: var(--background);
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background:
+    linear-gradient(180deg, rgba(243, 239, 231, 0.98), rgba(243, 239, 231, 1)),
+    var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(160, 139, 90, 0.35);
+  color: var(--ae-onyx);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+img {
+  max-width: 100%;
+}
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 3px rgba(160, 139, 90, 0.45);
+}
+
+.ae-surface {
+  background: color-mix(in srgb, var(--ae-white) 78%, transparent);
+  box-shadow: var(--ae-shadow-card);
+}
+
+.ae-display {
+  font-family: var(--font-cormorant), Georgia, serif;
+  letter-spacing: 0;
+}
+
+.ae-container {
+  width: min(100% - 2rem, 1180px);
+  margin-inline: auto;
+}
+
+.ae-section {
+  position: relative;
+  isolation: isolate;
+  padding-block: var(--ae-space-section);
+}
+
+.ae-kicker {
+  color: var(--ae-gilt);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.ae-rich-text {
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1.85;
+}
+
+.ae-rich-text > * + * {
+  margin-top: 1.25rem;
+}
+
+.ae-rich-text h2,
+.ae-rich-text h3,
+.ae-rich-text h4 {
+  color: var(--ae-forest);
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.ae-rich-text h2 { font-size: clamp(2.25rem, 6vw, 3.75rem); }
+.ae-rich-text h3 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.ae-rich-text blockquote {
+  border-left: 2px solid var(--ae-gilt);
+  color: var(--ae-forest);
+  font-family: var(--font-cormorant), Georgia, serif;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  padding-left: 1.5rem;
+}
+.ae-rich-text ul,
+.ae-rich-text ol { padding-left: 1.25rem; }
+.ae-rich-text ul { list-style: disc; }
+.ae-rich-text ol { list-style: decimal; }
+.ae-rich-text a {
+  color: var(--ae-forest);
+  text-decoration: underline;
+  text-decoration-color: var(--ae-gilt);
+  text-underline-offset: 0.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
