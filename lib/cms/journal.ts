@@ -36,65 +36,90 @@ export async function getJournalPage(input: JournalQuery = {}): Promise<JournalP
   if (process.env.NODE_ENV !== "production") noStore();
   const query = validateQuery(input);
 
-  if (!hasPayloadDatabase()) {
-    const filtered = staticJournalArticles.filter((article) =>
-      (!query.category || article.category === query.category) &&
-      (!query.featured || article.isFeatured) &&
-      (!query.tag || article.tags.some((tag) => tag.toLowerCase() === query.tag?.toLowerCase())) &&
-      (!query.query || `${article.title} ${article.excerpt}`.toLowerCase().includes(query.query.toLowerCase()))
-    );
-    return paginate(filtered, query.page, query.limit);
+  if (!hasPayloadDatabase()) return staticJournalPage(query);
+
+  try {
+    const payload = (await getPayloadClient()) as unknown as JournalPayload;
+    const result = await payload.find({
+      collection: "journal",
+      depth: 1,
+      limit: query.limit,
+      page: query.page,
+      sort: ["-publishedAt", "sortOrder"],
+      where: journalWhere(query)
+    });
+
+    return {
+      docs: result.docs.map(mapSummary),
+      hasNextPage: Boolean(result.hasNextPage),
+      hasPrevPage: Boolean(result.hasPrevPage),
+      limit: result.limit ?? query.limit,
+      page: result.page ?? query.page,
+      totalDocs: result.totalDocs ?? result.docs.length,
+      totalPages: result.totalPages ?? 1
+    };
+  } catch (error) {
+    console.error("Payload journal page read failed; using static fallback.", error);
+    return staticJournalPage(query);
   }
-
-  const payload = (await getPayloadClient()) as unknown as JournalPayload;
-  const result = await payload.find({
-    collection: "journal",
-    depth: 1,
-    limit: query.limit,
-    page: query.page,
-    sort: ["-publishedAt", "sortOrder"],
-    where: journalWhere(query)
-  });
-
-  return {
-    docs: result.docs.map(mapSummary),
-    hasNextPage: Boolean(result.hasNextPage),
-    hasPrevPage: Boolean(result.hasPrevPage),
-    limit: result.limit ?? query.limit,
-    page: result.page ?? query.page,
-    totalDocs: result.totalDocs ?? result.docs.length,
-    totalPages: result.totalPages ?? 1
-  };
 }
 
 export async function getJournalArticle(slug: string): Promise<JournalArticle> {
   if (process.env.NODE_ENV !== "production") noStore();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 120) throw new JournalNotFoundError();
 
-  if (!hasPayloadDatabase()) {
-    const article = staticJournalArticles.find((candidate) => candidate.slug === slug);
-    if (!article) throw new JournalNotFoundError();
-    return article;
-  }
+  if (!hasPayloadDatabase()) return staticJournalArticle(slug);
 
-  const payload = (await getPayloadClient()) as unknown as JournalPayload;
-  const result = await payload.find({
-    collection: "journal",
-    depth: 2,
-    limit: 1,
-    pagination: false,
-    where: { and: [...publishedClauses(), { slug: { equals: slug } }] }
-  });
-  if (!result.docs[0]) throw new JournalNotFoundError();
-  return mapArticle(result.docs[0]);
+  try {
+    const payload = (await getPayloadClient()) as unknown as JournalPayload;
+    const result = await payload.find({
+      collection: "journal",
+      depth: 2,
+      limit: 1,
+      pagination: false,
+      where: { and: [...publishedClauses(), { slug: { equals: slug } }] }
+    });
+    if (!result.docs[0]) throw new JournalNotFoundError();
+    return mapArticle(result.docs[0]);
+  } catch (error) {
+    if (error instanceof JournalNotFoundError) throw error;
+    console.error("Payload journal article read failed; using static fallback.", error);
+    return staticJournalArticle(slug);
+  }
 }
 
 export async function getPublishedJournalSlugs(): Promise<Array<{ slug: string; updatedAt?: string }>> {
   if (process.env.NODE_ENV !== "production") noStore();
-  if (!hasPayloadDatabase()) return staticJournalArticles.map(({ slug, publishedAt }) => ({ slug, updatedAt: publishedAt }));
-  const payload = (await getPayloadClient()) as unknown as JournalPayload;
-  const result = await payload.find({ collection: "journal", depth: 0, limit: 500, pagination: false, where: { and: publishedClauses() } });
-  return result.docs.map((doc) => ({ slug: text(doc.slug), updatedAt: optionalText(doc.updatedAt) })).filter((item) => item.slug);
+  if (!hasPayloadDatabase()) return staticJournalSlugs();
+
+  try {
+    const payload = (await getPayloadClient()) as unknown as JournalPayload;
+    const result = await payload.find({ collection: "journal", depth: 0, limit: 500, pagination: false, where: { and: publishedClauses() } });
+    return result.docs.map((doc) => ({ slug: text(doc.slug), updatedAt: optionalText(doc.updatedAt) })).filter((item) => item.slug);
+  } catch (error) {
+    console.error("Payload journal slugs read failed; using static fallback.", error);
+    return staticJournalSlugs();
+  }
+}
+
+function staticJournalPage(query: Required<Pick<JournalQuery, "limit" | "page">> & JournalQuery): JournalPage {
+  const filtered = staticJournalArticles.filter((article) =>
+    (!query.category || article.category === query.category) &&
+    (!query.featured || article.isFeatured) &&
+    (!query.tag || article.tags.some((tag) => tag.toLowerCase() === query.tag?.toLowerCase())) &&
+    (!query.query || `${article.title} ${article.excerpt}`.toLowerCase().includes(query.query.toLowerCase()))
+  );
+  return paginate(filtered, query.page, query.limit);
+}
+
+function staticJournalArticle(slug: string): JournalArticle {
+  const article = staticJournalArticles.find((candidate) => candidate.slug === slug);
+  if (!article) throw new JournalNotFoundError();
+  return article;
+}
+
+function staticJournalSlugs() {
+  return staticJournalArticles.map(({ slug, publishedAt }) => ({ slug, updatedAt: publishedAt }));
 }
 
 function journalWhere(query: Required<Pick<JournalQuery, "limit" | "page">> & JournalQuery): CmsRecord {

@@ -58,60 +58,60 @@ export async function getArtistProfile(slug: string): Promise<ArtistProfile> {
   }
 
   if (!hasPayloadDatabase()) {
-    const artist = staticArtistProfiles.find((candidate) => candidate.slug === slug);
-    if (!artist) throw new ArtistNotFoundError();
-    const products = (await getShopProducts({
-      artist: slug,
-      availability: [],
-      colors: [],
-      limit: 12,
-      page: 1,
-      sizes: [],
-      sort: "featured"
-    })).docs;
-    return { ...artist, products };
+    return staticArtistProfile(slug);
   }
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "artists",
-    depth: 2,
-    limit: 1,
-    pagination: false,
-    where: { and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }] }
-  });
-  const artist = result.docs[0];
-  if (!artist) throw new ArtistNotFoundError();
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "artists",
+      depth: 2,
+      limit: 1,
+      pagination: false,
+      where: { and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }] }
+    });
+    const artist = result.docs[0];
+    if (!artist) throw new ArtistNotFoundError();
 
-  const [drops, products] = await Promise.all([
-    getArtistDrops(payload, slug),
-    getShopProducts({
-      artist: slug,
-      availability: [],
-      colors: [],
-      limit: 12,
-      page: 1,
-      sizes: [],
-      sort: "featured"
-    }).then((result) => result.docs)
-  ]);
+    const [drops, products] = await Promise.all([
+      getArtistDrops(payload, slug),
+      getShopProducts({
+        artist: slug,
+        availability: [],
+        colors: [],
+        limit: 12,
+        page: 1,
+        sizes: [],
+        sort: "featured"
+      }).then((result) => result.docs)
+    ]);
 
-  return mapArtistProfile(artist, drops, products);
+    return mapArtistProfile(artist, drops, products);
+  } catch (error) {
+    if (error instanceof ArtistNotFoundError) throw error;
+    console.error("Payload artist profile read failed; using static fallback.", error);
+    return staticArtistProfile(slug);
+  }
 }
 
 export async function getPublishedArtistSlugs(): Promise<string[]> {
   if (process.env.NODE_ENV !== "production") noStore();
   if (!hasPayloadDatabase()) return staticArtistProfiles.map((artist) => artist.slug);
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "artists",
-    depth: 0,
-    limit: 100,
-    pagination: false,
-    where: { isPublished: { equals: true } }
-  });
-  return result.docs.map((artist) => optionalText(artist.slug)).filter((slug): slug is string => Boolean(slug));
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "artists",
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      where: { isPublished: { equals: true } }
+    });
+    return result.docs.map((artist) => optionalText(artist.slug)).filter((slug): slug is string => Boolean(slug));
+  } catch (error) {
+    console.error("Payload artist slugs read failed; using static fallback.", error);
+    return staticArtistProfiles.map((artist) => artist.slug);
+  }
 }
 
 async function getArtistDrops(payload: PayloadClient, slug: string): Promise<ArtistDrop[]> {
@@ -204,6 +204,21 @@ function mapFact(doc: CmsRecord) {
 
 function staticArtistDirectory(): ArtistDirectoryItem[] {
   return staticArtistProfiles.map(toDirectoryItem);
+}
+
+async function staticArtistProfile(slug: string): Promise<ArtistProfile> {
+  const artist = staticArtistProfiles.find((candidate) => candidate.slug === slug);
+  if (!artist) throw new ArtistNotFoundError();
+  const products = (await getShopProducts({
+    artist: slug,
+    availability: [],
+    colors: [],
+    limit: 12,
+    page: 1,
+    sizes: [],
+    sort: "featured"
+  })).docs;
+  return { ...artist, products };
 }
 
 function toDirectoryItem(profile: ArtistProfile): ArtistDirectoryItem {

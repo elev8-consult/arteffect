@@ -30,18 +30,23 @@ export class CauseNotFoundError extends Error {
 
 export async function getCauseDirectory(): Promise<CauseDirectoryItem[]> {
   if (process.env.NODE_ENV !== "production") noStore();
-  if (!hasPayloadDatabase()) return staticCauseProfiles.map(toDirectoryItem);
+  if (!hasPayloadDatabase()) return staticCauseDirectory();
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "causes",
-    depth: 1,
-    limit: 100,
-    pagination: false,
-    sort: ["sortOrder", "name"],
-    where: { isPublished: { equals: true } }
-  });
-  return result.docs.map(mapCauseDirectory);
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "causes",
+      depth: 1,
+      limit: 100,
+      pagination: false,
+      sort: ["sortOrder", "name"],
+      where: { isPublished: { equals: true } }
+    });
+    return result.docs.map(mapCauseDirectory);
+  } catch (error) {
+    console.error("Payload causes directory read failed; using static fallback.", error);
+    return staticCauseDirectory();
+  }
 }
 
 export async function getCauseProfile(slug: string): Promise<CauseProfile> {
@@ -49,44 +54,61 @@ export async function getCauseProfile(slug: string): Promise<CauseProfile> {
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) || slug.length > 120) {
     throw new CauseNotFoundError();
   }
-  if (!hasPayloadDatabase()) {
-    const cause = staticCauseProfiles.find((candidate) => candidate.slug === slug);
+  if (!hasPayloadDatabase()) return staticCauseProfile(slug);
+
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "causes",
+      depth: 2,
+      limit: 1,
+      pagination: false,
+      where: { and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }] }
+    });
+    const cause = result.docs[0];
     if (!cause) throw new CauseNotFoundError();
-    const products = (await getShopProducts(productQuery(slug))).docs;
-    return { ...cause, products };
+
+    const [drops, products] = await Promise.all([
+      getCauseDrops(payload, slug),
+      getShopProducts(productQuery(slug)).then((result) => result.docs)
+    ]);
+    return mapCauseProfile(cause, drops, products);
+  } catch (error) {
+    if (error instanceof CauseNotFoundError) throw error;
+    console.error("Payload cause profile read failed; using static fallback.", error);
+    return staticCauseProfile(slug);
   }
-
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "causes",
-    depth: 2,
-    limit: 1,
-    pagination: false,
-    where: { and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }] }
-  });
-  const cause = result.docs[0];
-  if (!cause) throw new CauseNotFoundError();
-
-  const [drops, products] = await Promise.all([
-    getCauseDrops(payload, slug),
-    getShopProducts(productQuery(slug)).then((result) => result.docs)
-  ]);
-  return mapCauseProfile(cause, drops, products);
 }
 
 export async function getPublishedCauseSlugs(): Promise<string[]> {
   if (process.env.NODE_ENV !== "production") noStore();
   if (!hasPayloadDatabase()) return staticCauseProfiles.map((cause) => cause.slug);
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "causes",
-    depth: 0,
-    limit: 100,
-    pagination: false,
-    where: { isPublished: { equals: true } }
-  });
-  return result.docs.map((cause) => optionalText(cause.slug)).filter((slug): slug is string => Boolean(slug));
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "causes",
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      where: { isPublished: { equals: true } }
+    });
+    return result.docs.map((cause) => optionalText(cause.slug)).filter((slug): slug is string => Boolean(slug));
+  } catch (error) {
+    console.error("Payload cause slugs read failed; using static fallback.", error);
+    return staticCauseProfiles.map((cause) => cause.slug);
+  }
+}
+
+function staticCauseDirectory(): CauseDirectoryItem[] {
+  return staticCauseProfiles.map(toDirectoryItem);
+}
+
+async function staticCauseProfile(slug: string): Promise<CauseProfile> {
+  const cause = staticCauseProfiles.find((candidate) => candidate.slug === slug);
+  if (!cause) throw new CauseNotFoundError();
+  const products = (await getShopProducts(productQuery(slug))).docs;
+  return { ...cause, products };
 }
 
 function productQuery(cause: string) {

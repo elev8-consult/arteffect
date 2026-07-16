@@ -22,46 +22,55 @@ export async function getProductReviews(product: ShopProduct, limit = 2): Promis
   if (process.env.NODE_ENV !== "production") noStore();
 
   if (!hasPayloadDatabase()) {
-    return staticTestimonials
-      .filter((review) => review.role.toLocaleLowerCase().includes("collector"))
-      .slice(0, limit)
-      .map((review, index) => ({
-        id: `static-review-${index}`,
-        name: review.name,
-        quote: review.quote,
-        role: review.role
-      }));
+    return staticProductReviews(limit);
   }
 
   if (!product.drop) return [];
 
-  const payload = (await getPayloadClient()) as unknown as ReviewPayload;
-  const result = await payload.find({
-    collection: "testimonials",
-    depth: 0,
-    limit,
-    pagination: false,
-    sort: ["sortOrder", "-createdAt"],
-    where: {
-      and: [
-        { isPublished: { equals: true } },
-        { relationship: { equals: "collector" } },
-        { relatedDrop: { equals: product.drop.id } }
-      ]
-    }
-  });
+  try {
+    const payload = (await getPayloadClient()) as unknown as ReviewPayload;
+    const result = await payload.find({
+      collection: "testimonials",
+      depth: 0,
+      limit,
+      pagination: false,
+      sort: ["sortOrder", "-createdAt"],
+      where: {
+        and: [
+          { isPublished: { equals: true } },
+          { relationship: { equals: "collector" } },
+          { relatedDrop: { equals: product.drop.id } }
+        ]
+      }
+    });
 
-  return result.docs
+    return result.docs
+      .map((review, index) => ({
+        id: typeof review.id === "number" || typeof review.id === "string"
+          ? review.id
+          : `review-${index}`,
+        name: text(review.personName, "Collector"),
+        quote: text(review.quote, ""),
+        rating: rating(review.rating),
+        role: optionalText(review.role)
+      }))
+      .filter((review) => Boolean(review.quote));
+  } catch (error) {
+    console.error("Payload product reviews read failed; using static fallback.", error);
+    return staticProductReviews(limit);
+  }
+}
+
+function staticProductReviews(limit: number): ShopReview[] {
+  return staticTestimonials
+    .filter((review) => review.role.toLocaleLowerCase().includes("collector"))
+    .slice(0, limit)
     .map((review, index) => ({
-      id: typeof review.id === "number" || typeof review.id === "string"
-        ? review.id
-        : `review-${index}`,
-      name: text(review.personName, "Collector"),
-      quote: text(review.quote, ""),
-      rating: rating(review.rating),
-      role: optionalText(review.role)
-    }))
-    .filter((review) => Boolean(review.quote));
+      id: `static-review-${index}`,
+      name: review.name,
+      quote: review.quote,
+      role: review.role
+    }));
 }
 
 function text(value: unknown, fallback: string) {

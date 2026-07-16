@@ -30,27 +30,40 @@ export async function getFAQs(input: { audience?: string; category?: string; que
   if (query && query.length > 100) throw new FAQInputError("query is invalid.");
 
   if (!hasPayloadDatabase()) {
-    return staticFAQs.filter((faq) =>
-      (!category || faq.category === category) &&
-      (!audience || faq.audience === audience || faq.audience === "all") &&
-      (!query || faq.question.toLowerCase().includes(query.toLowerCase()))
-    );
+    return filterStaticFAQs({ audience, category, query });
   }
 
-  const and: CmsRecord[] = [{ isPublished: { equals: true } }];
-  if (category) and.push({ category: { equals: category } });
-  if (audience && audience !== "all") and.push({ or: [{ audience: { equals: audience } }, { audience: { equals: "all" } }] });
-  if (query) and.push({ question: { contains: query } });
-  const payload = (await getPayloadClient()) as unknown as FAQPayload;
-  const result = await payload.find({
-    collection: "faqs",
-    depth: 0,
-    limit: 250,
-    pagination: false,
-    sort: ["category", "sortOrder"],
-    where: { and }
-  });
-  return result.docs.map(mapFAQ);
+  try {
+    const and: CmsRecord[] = [{ isPublished: { equals: true } }];
+    if (category) and.push({ category: { equals: category } });
+    if (audience && audience !== "all") and.push({ or: [{ audience: { equals: audience } }, { audience: { equals: "all" } }] });
+    if (query) and.push({ question: { contains: query } });
+    const payload = (await getPayloadClient()) as unknown as FAQPayload;
+    const result = await payload.find({
+      collection: "faqs",
+      depth: 0,
+      limit: 250,
+      pagination: false,
+      sort: ["category", "sortOrder"],
+      where: { and }
+    });
+    return result.docs.map(mapFAQ);
+  } catch (error) {
+    console.error("Payload faqs read failed; using static fallback.", error);
+    return filterStaticFAQs({ audience, category, query });
+  }
+}
+
+function filterStaticFAQs(input: {
+  audience?: FAQAudience;
+  category?: FAQCategory;
+  query?: string;
+}): FAQItem[] {
+  return staticFAQs.filter((faq) =>
+    (!input.category || faq.category === input.category) &&
+    (!input.audience || faq.audience === input.audience || faq.audience === "all") &&
+    (!input.query || faq.question.toLowerCase().includes(input.query.toLowerCase()))
+  );
 }
 
 function mapFAQ(doc: CmsRecord, index: number): FAQItem {

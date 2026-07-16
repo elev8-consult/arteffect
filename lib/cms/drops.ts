@@ -45,35 +45,42 @@ export async function getDropShowcase(slug: string): Promise<DropShowcase> {
     return staticDropShowcase();
   }
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "drops",
-    depth: 2,
-    limit: 1,
-    pagination: false,
-    where: {
-      and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }]
-    }
-  });
-  const doc = result.docs[0];
-  if (!doc) throw new DropNotFoundError();
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "drops",
+      depth: 2,
+      limit: 1,
+      pagination: false,
+      where: {
+        and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }]
+      }
+    });
+    const doc = result.docs[0];
+    if (!doc) throw new DropNotFoundError();
 
-  const linkedProducts = records(doc.products)
-    .filter((product) => typeof product.name === "string")
-    .map(mapShopProduct);
-  const products = linkedProducts.length
-    ? linkedProducts
-    : (await getShopProducts({
-        availability: [],
-        colors: [],
-        drop: slug,
-        limit: 48,
-        page: 1,
-        sizes: [],
-        sort: "featured"
-      })).docs;
+    const linkedProducts = records(doc.products)
+      .filter((product) => typeof product.name === "string")
+      .map(mapShopProduct);
+    const products = linkedProducts.length
+      ? linkedProducts
+      : (await getShopProducts({
+          availability: [],
+          colors: [],
+          drop: slug,
+          limit: 48,
+          page: 1,
+          sizes: [],
+          sort: "featured"
+        })).docs;
 
-  return mapDropShowcase(doc, products);
+    return mapDropShowcase(doc, products);
+  } catch (error) {
+    if (error instanceof DropNotFoundError) throw error;
+    console.error("Payload drop showcase read failed; using static fallback.", error);
+    if (slug !== "batch-001") throw new DropNotFoundError();
+    return staticDropShowcase();
+  }
 }
 
 export async function getPublishedDropSlugs(): Promise<string[]> {
@@ -81,18 +88,23 @@ export async function getPublishedDropSlugs(): Promise<string[]> {
 
   if (!hasPayloadDatabase()) return ["batch-001"];
 
-  const payload = (await getPayloadClient()) as unknown as PayloadClient;
-  const result = await payload.find({
-    collection: "drops",
-    depth: 0,
-    limit: 100,
-    pagination: false,
-    where: { isPublished: { equals: true } }
-  });
+  try {
+    const payload = (await getPayloadClient()) as unknown as PayloadClient;
+    const result = await payload.find({
+      collection: "drops",
+      depth: 0,
+      limit: 100,
+      pagination: false,
+      where: { isPublished: { equals: true } }
+    });
 
-  return result.docs
-    .map((doc) => optionalText(doc.slug))
-    .filter((slug): slug is string => Boolean(slug));
+    return result.docs
+      .map((doc) => optionalText(doc.slug))
+      .filter((slug): slug is string => Boolean(slug));
+  } catch (error) {
+    console.error("Payload drop slugs read failed; using static fallback.", error);
+    return ["batch-001"];
+  }
 }
 
 function staticDropShowcase(): DropShowcase {

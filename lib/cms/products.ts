@@ -52,27 +52,32 @@ export async function getShopProducts(query: ProductQuery): Promise<ProductListR
     return findStaticProducts(query);
   }
 
-  const payload = (await getPayloadClient()) as unknown as ProductPayload;
-  const result = await payload.find({
-    collection: "products",
-    depth: 2,
-    limit: query.limit,
-    page: query.page,
-    sort: productSort(query.sort),
-    where: productWhere(query)
-  });
-
-  return {
-    docs: result.docs.map(mapShopProduct),
-    pagination: {
-      hasNextPage: result.hasNextPage ?? query.page < result.totalPages,
-      hasPreviousPage: result.hasPrevPage ?? query.page > 1,
+  try {
+    const payload = (await getPayloadClient()) as unknown as ProductPayload;
+    const result = await payload.find({
+      collection: "products",
+      depth: 2,
       limit: query.limit,
-      page: result.page ?? query.page,
-      total: result.totalDocs,
-      totalPages: result.totalPages
-    }
-  };
+      page: query.page,
+      sort: productSort(query.sort),
+      where: productWhere(query)
+    });
+
+    return {
+      docs: result.docs.map(mapShopProduct),
+      pagination: {
+        hasNextPage: result.hasNextPage ?? query.page < result.totalPages,
+        hasPreviousPage: result.hasPrevPage ?? query.page > 1,
+        limit: query.limit,
+        page: result.page ?? query.page,
+        total: result.totalDocs,
+        totalPages: result.totalPages
+      }
+    };
+  } catch (error) {
+    console.error("Payload shop products read failed; using static fallback.", error);
+    return findStaticProducts(query);
+  }
 }
 
 export async function getShopProduct(slug: string): Promise<ShopProduct> {
@@ -88,20 +93,28 @@ export async function getShopProduct(slug: string): Promise<ShopProduct> {
     return product;
   }
 
-  const payload = (await getPayloadClient()) as unknown as ProductPayload;
-  const result = await payload.find({
-    collection: "products",
-    depth: 2,
-    limit: 1,
-    pagination: false,
-    where: {
-      and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }]
-    }
-  });
+  try {
+    const payload = (await getPayloadClient()) as unknown as ProductPayload;
+    const result = await payload.find({
+      collection: "products",
+      depth: 2,
+      limit: 1,
+      pagination: false,
+      where: {
+        and: [{ slug: { equals: slug } }, { isPublished: { equals: true } }]
+      }
+    });
 
-  if (!result.docs[0]) throw new ProductNotFoundError();
+    if (!result.docs[0]) throw new ProductNotFoundError();
 
-  return mapShopProduct(result.docs[0]);
+    return mapShopProduct(result.docs[0]);
+  } catch (error) {
+    if (error instanceof ProductNotFoundError) throw error;
+    console.error("Payload shop product read failed; using static fallback.", error);
+    const product = staticShopProducts().find((candidate) => candidate.slug === slug);
+    if (!product) throw new ProductNotFoundError();
+    return product;
+  }
 }
 
 export async function getRelatedShopProducts(product: ShopProduct, limit = 3): Promise<ShopProduct[]> {
@@ -111,52 +124,57 @@ export async function getRelatedShopProducts(product: ShopProduct, limit = 3): P
     return rankRelatedProducts(staticShopProducts(), product).slice(0, limit);
   }
 
-  const payload = (await getPayloadClient()) as unknown as ProductPayload;
-  const relationshipFilters = [
-    product.artist ? { artist: { equals: product.artist.id } } : undefined,
-    product.artwork ? { artwork: { equals: product.artwork.id } } : undefined,
-    product.cause ? { cause: { equals: product.cause.id } } : undefined,
-    product.drop ? { drop: { equals: product.drop.id } } : undefined
-  ].filter(Boolean) as Record<string, unknown>[];
-  const where = {
-    and: [
-      { isPublished: { equals: true } },
-      { id: { not_equals: product.id } },
-      ...(relationshipFilters.length ? [{ or: relationshipFilters }] : [])
-    ]
-  };
-  const result = await payload.find({
-    collection: "products",
-    depth: 2,
-    limit: Math.max(limit * 4, 12),
-    pagination: false,
-    sort: ["-isFeatured", "sortOrder", "name"],
-    where
-  });
-  let candidates = result.docs.map(mapShopProduct);
-
-  if (candidates.length < limit && relationshipFilters.length) {
-    const fallback = await payload.find({
+  try {
+    const payload = (await getPayloadClient()) as unknown as ProductPayload;
+    const relationshipFilters = [
+      product.artist ? { artist: { equals: product.artist.id } } : undefined,
+      product.artwork ? { artwork: { equals: product.artwork.id } } : undefined,
+      product.cause ? { cause: { equals: product.cause.id } } : undefined,
+      product.drop ? { drop: { equals: product.drop.id } } : undefined
+    ].filter(Boolean) as Record<string, unknown>[];
+    const where = {
+      and: [
+        { isPublished: { equals: true } },
+        { id: { not_equals: product.id } },
+        ...(relationshipFilters.length ? [{ or: relationshipFilters }] : [])
+      ]
+    };
+    const result = await payload.find({
       collection: "products",
       depth: 2,
-      limit: 48,
+      limit: Math.max(limit * 4, 12),
       pagination: false,
       sort: ["-isFeatured", "sortOrder", "name"],
-      where: {
-        and: [
-          { isPublished: { equals: true } },
-          { id: { not_equals: product.id } }
-        ]
-      }
+      where
     });
-    const seen = new Set(candidates.map((candidate) => candidate.slug));
-    candidates = [
-      ...candidates,
-      ...fallback.docs.map(mapShopProduct).filter((candidate) => !seen.has(candidate.slug))
-    ];
-  }
+    let candidates = result.docs.map(mapShopProduct);
 
-  return rankRelatedProducts(candidates, product).slice(0, limit);
+    if (candidates.length < limit && relationshipFilters.length) {
+      const fallback = await payload.find({
+        collection: "products",
+        depth: 2,
+        limit: 48,
+        pagination: false,
+        sort: ["-isFeatured", "sortOrder", "name"],
+        where: {
+          and: [
+            { isPublished: { equals: true } },
+            { id: { not_equals: product.id } }
+          ]
+        }
+      });
+      const seen = new Set(candidates.map((candidate) => candidate.slug));
+      candidates = [
+        ...candidates,
+        ...fallback.docs.map(mapShopProduct).filter((candidate) => !seen.has(candidate.slug))
+      ];
+    }
+
+    return rankRelatedProducts(candidates, product).slice(0, limit);
+  } catch (error) {
+    console.error("Payload related products read failed; using static fallback.", error);
+    return rankRelatedProducts(staticShopProducts(), product).slice(0, limit);
+  }
 }
 
 export function mapShopProduct(doc: CmsRecord): ShopProduct {
