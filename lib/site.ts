@@ -1,13 +1,8 @@
-const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.RAILWAY_PUBLIC_DOMAIN
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    : "https://arteffect.com")
-).replace(/\/+$/, "");
+import { resolveSiteUrl } from "@/lib/site-url";
 
 export const siteConfig = {
   name: "ArtEffect",
-  url: siteUrl,
+  url: resolveSiteUrl(),
   description:
     "Limited art objects that connect collectable design, working artists, and measurable NGO impact.",
   socialImage:

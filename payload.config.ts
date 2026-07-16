@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { buildConfig } from "payload";
 import sharp from "sharp";
 
+import { resolveSiteUrl } from "./lib/site-url";
 import { Artists } from "./payload/collections/Artists";
 import { Artworks } from "./payload/collections/Artworks";
 import { Causes } from "./payload/collections/Causes";
@@ -42,12 +43,7 @@ const payloadSecret =
   (process.env.NODE_ENV !== "production" || isProductionBuild
     ? randomBytes(32).toString("base64url")
     : "");
-const siteUrl = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.RAILWAY_PUBLIC_DOMAIN
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    : "http://localhost:3000")
-).replace(/\/+$/, "");
+const siteUrl = resolveSiteUrl();
 
 if (!payloadSecret) {
   throw new Error("PAYLOAD_SECRET must be set before starting Payload in production.");
