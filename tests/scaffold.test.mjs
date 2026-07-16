@@ -25,11 +25,14 @@ async function readText(...segments) {
 describe("Next.js scaffold contract", () => {
   test("pins the requested stack and exposes verification scripts", async () => {
     const packageJson = await readJson("package.json");
+    const nodeVersion = await readText(".node-version");
     const dependencies = {
       ...packageJson.dependencies,
       ...packageJson.devDependencies
     };
 
+    assert.equal(packageJson.engines?.node, ">=20.9.0 <21");
+    assert.equal(nodeVersion.trim(), "20");
     assert.equal(packageJson.scripts.dev, "next dev");
     assert.equal(packageJson.scripts.build, "next build --webpack");
     assert.equal(packageJson.scripts.lint, "eslint . --max-warnings=0");
