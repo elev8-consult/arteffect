@@ -36,7 +36,7 @@ export function ArtistProfile({ artist }: ArtistProfileProps) {
             className="relative min-h-[28rem] overflow-hidden bg-[var(--ae-forest-soft)] lg:min-h-0"
           >
             {artist.image ? <Image src={artist.image.src} alt={artist.image.alt} fill priority sizes="(max-width: 1023px) 100vw, 42vw" className="object-cover" /> : null}
-            <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(0deg,rgba(25,43,30,.46),transparent_45%)]" />
+            <div aria-hidden="true" className="absolute inset-0 bg-[linear-gradient(0deg,rgba(0,0,0,.46),transparent_45%)]" />
             {artist.location ? <p className="absolute bottom-5 left-5 inline-flex items-center gap-2 text-xs uppercase tracking-[.12em] text-white/70"><MapPin className="size-3.5 text-[var(--ae-gilt)]" aria-hidden="true" />{artist.location}</p> : null}
           </motion.div>
           <div className="flex flex-col justify-end px-0 py-12 sm:py-16 lg:px-[clamp(2.5rem,7vw,7rem)]">

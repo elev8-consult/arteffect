@@ -36,7 +36,7 @@ export default async function AboutPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organization).replace(/</g, "\\u003c") }} />
       <section className="relative min-h-[calc(100svh-4rem)] bg-[var(--ae-forest)] text-[var(--ae-white)]">
         {content.hero.image ? <Image src={content.hero.image.src} alt={content.hero.image.alt} fill priority className="object-cover opacity-50" sizes="100vw" /> : null}
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(25,43,30,.94)_0%,rgba(25,43,30,.68)_52%,rgba(25,43,30,.28)_100%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.94)_0%,rgba(0,0,0,.68)_52%,rgba(0,0,0,.28)_100%)]" />
         <div className="ae-container relative flex min-h-[calc(100svh-4rem)] items-end py-16 sm:py-24">
           <div className="max-w-4xl">
             <p className="ae-kicker">{content.hero.eyebrow}</p>

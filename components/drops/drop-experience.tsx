@@ -30,8 +30,8 @@ export function DropExperience({ drop }: DropExperienceProps) {
       <section ref={heroRef} className="relative isolate min-h-[46rem] overflow-hidden bg-[var(--ae-forest)] pt-16 text-[var(--ae-white)] sm:min-h-[52rem]">
         <motion.div aria-hidden="true" className="absolute -inset-y-[5%] inset-x-0" style={reducedMotion ? undefined : { y: heroY }}>
           {drop.image ? <Image src={drop.image} alt="" fill priority sizes="100vw" className="object-cover opacity-55" /> : null}
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(25,43,30,.96),rgba(25,43,30,.68)_50%,rgba(25,43,30,.34))]" />
-          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(0deg,rgba(25,43,30,.95),transparent)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,.96),rgba(0,0,0,.68)_50%,rgba(0,0,0,.34))]" />
+          <div className="absolute inset-x-0 bottom-0 h-2/5 bg-[linear-gradient(0deg,rgba(0,0,0,.95),transparent)]" />
         </motion.div>
         <div className="ae-container relative flex min-h-[calc(46rem-4rem)] flex-col justify-end pb-9 pt-20 sm:min-h-[calc(52rem-4rem)] md:pb-12">
           <motion.div initial={reducedMotion ? false : { opacity: 0, y: 28 }} animate={reducedMotion ? undefined : { opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} className="max-w-5xl">

@@ -156,7 +156,7 @@ export function HomeExperience({
             sizes="100vw"
             className="object-cover opacity-[0.62]"
           />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(25,43,30,0.95),rgba(25,43,30,0.55),rgba(25,43,30,0.2))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.95),rgba(0,0,0,0.55),rgba(0,0,0,0.2))]" />
         </motion.div>
         <div className="ae-container relative flex min-h-[calc(92svh-4rem)] items-end pb-10 pt-28">
           <motion.div
@@ -408,7 +408,7 @@ export function HomeExperience({
                     "focus-ring absolute grid size-12 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border text-sm font-bold transition",
                     index === selectedDetailIndex
                       ? "border-[var(--ae-gilt)] bg-[var(--ae-gilt)] text-[var(--ae-onyx)]"
-                      : "border-white/70 bg-[rgba(25,43,30,0.58)] text-white hover:bg-[var(--ae-forest)]"
+                      : "border-white/70 bg-[rgba(0,0,0,0.58)] text-white hover:bg-[var(--ae-forest)]"
                   )}
                   style={{ left: `${detail.x}%`, top: `${detail.y}%` }}
                 >

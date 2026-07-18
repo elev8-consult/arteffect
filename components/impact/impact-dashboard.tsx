@@ -149,7 +149,7 @@ function FilterButton({ active, children, onClick }: { active: boolean; children
 
 function StatePill({ type, inverted = false }: { type: ImpactMetricType; inverted?: boolean }) {
   const verified = type === "verified";
-  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.64rem] font-semibold uppercase tracking-[.09em] ${verified ? (inverted ? "border-[var(--ae-gilt)]/50 bg-[var(--ae-gilt)]/15 text-[var(--ae-white)]" : "border-[var(--ae-gilt)]/50 bg-[var(--ae-gilt)]/15 text-[var(--ae-forest)]") : (inverted ? "border-white/25 bg-white/10 text-white/75" : "border-[var(--ae-stone)]/35 bg-[var(--ae-forest-soft)]/[.06] text-[var(--ae-forest)]")}`}>{verified ? <BadgeCheck className="size-3 text-[var(--ae-gilt)]" aria-hidden="true" /> : <Sprout className={`size-3 ${inverted ? "text-white/55" : "text-[var(--ae-stone)]"}`} aria-hidden="true" />}{stateCopy[type]}</span>;
+  return <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[0.64rem] font-semibold uppercase tracking-[.09em] ${verified ? (inverted ? "border-[var(--ae-red)] bg-[var(--ae-red)] text-white" : "border-[var(--ae-red)] bg-white text-[var(--ae-red)]") : (inverted ? "border-white/25 bg-white/10 text-white/75" : "border-[var(--border)] bg-white text-[var(--ae-ink)]")}`}>{verified ? <BadgeCheck className={`size-3 ${inverted ? "text-white" : "text-[var(--ae-red)]"}`} aria-hidden="true" /> : <Sprout className={`size-3 ${inverted ? "text-white/55" : "text-[var(--ae-stone)]"}`} aria-hidden="true" />}{stateCopy[type]}</span>;
 }
 
 function formatCurrency(value: number, currency: string) {

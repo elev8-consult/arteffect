@@ -11,13 +11,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-[var(--ae-forest)] px-5 py-2.5 text-[var(--ae-white)] shadow-[0_8px_18px_rgba(25,43,30,0.14)] hover:bg-[var(--ae-forest-soft)] hover:shadow-[0_10px_22px_rgba(25,43,30,0.2)]",
+          "bg-[var(--ae-red)] px-5 py-2.5 text-[var(--ae-white)] shadow-[0_8px_18px_rgba(214,39,39,0.22)] hover:bg-[var(--ae-red-hover)] hover:shadow-[0_10px_22px_rgba(168,31,31,0.28)]",
         outline:
-          "border-[var(--border)] bg-transparent px-5 py-2.5 text-[var(--ae-forest)] hover:border-[var(--ae-gilt)] hover:bg-[var(--ae-fog)] hover:text-[var(--ae-onyx)]",
+          "border-[var(--border)] bg-transparent px-5 py-2.5 text-[var(--ae-ink)] hover:border-[var(--ae-red)] hover:bg-[var(--ae-fog)] hover:text-[var(--ae-ink)]",
         ghost:
-          "px-3 py-2 text-[var(--ae-forest)] hover:bg-[rgba(160,139,90,0.12)]",
+          "px-3 py-2 text-[var(--ae-ink)] hover:bg-[color-mix(in_srgb,var(--ae-red)_12%,transparent)]",
         link:
-          "h-auto min-h-0 rounded-none border-b border-transparent px-0 py-1 text-[var(--ae-forest)] hover:border-[var(--ae-gilt)] hover:text-[var(--ae-onyx)]"
+          "h-auto min-h-0 rounded-none border-b border-transparent px-0 py-1 text-[var(--ae-ink)] hover:border-[var(--ae-red)] hover:text-[var(--ae-red)]"
       },
       size: {
         default: "h-10",

@@ -23,7 +23,7 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[rgba(25,43,30,0.88)] text-[var(--ae-white)] backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-[rgba(0,0,0,0.88)] text-[var(--ae-white)] backdrop-blur-xl">
       <div className="ae-container flex h-16 items-center justify-between gap-3">
         <Link href="/" className="focus-ring ae-display rounded text-2xl font-semibold" aria-label="ArtEffect home">
           ArtEffect

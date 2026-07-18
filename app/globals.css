@@ -1,40 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --ae-forest: #192b1e;
-  --ae-forest-soft: #24392a;
-  --ae-onyx: #0e0e0e;
-  --ae-parchment: #f3efe7;
-  --ae-fog: #e6e1d9;
-  --ae-stone: #9e9588;
-  --ae-gilt: #a08b5a;
-  --ae-white: #fffaf2;
+  /* Brand palette */
+  --ae-canvas: #f3f3f3;
+  --ae-ink: #000000;
+  --ae-red: #d62727;
+  --ae-red-hover: #a81f1f;
+  --ae-border-soft: #e5e5e5;
+  --ae-white: #ffffff;
+  --ae-muted: #5c5c5c;
+  --ae-surface-muted: #ebebeb;
+
+  /* Legacy token names mapped to the brand palette */
+  --ae-forest: var(--ae-ink);
+  --ae-forest-soft: #1f1f1f;
+  --ae-onyx: var(--ae-ink);
+  --ae-parchment: var(--ae-canvas);
+  --ae-fog: var(--ae-surface-muted);
+  --ae-stone: #737373;
+  --ae-gilt: var(--ae-red);
+
   --font-inter: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-cormorant: "Cormorant Garamond", Georgia, "Times New Roman", serif;
 
-  --background: var(--ae-parchment);
-  --foreground: var(--ae-onyx);
+  --background: var(--ae-canvas);
+  --foreground: var(--ae-ink);
   --card: var(--ae-white);
-  --card-foreground: var(--ae-onyx);
+  --card-foreground: var(--ae-ink);
   --popover: var(--ae-white);
-  --popover-foreground: var(--ae-onyx);
-  --primary: var(--ae-forest);
+  --popover-foreground: var(--ae-ink);
+  --primary: var(--ae-red);
   --primary-foreground: var(--ae-white);
-  --secondary: var(--ae-fog);
-  --secondary-foreground: var(--ae-forest);
-  --muted: var(--ae-fog);
-  --muted-foreground: #675f54;
-  --accent: var(--ae-gilt);
-  --accent-foreground: var(--ae-onyx);
-  --destructive: #8a1f11;
+  --primary-hover: var(--ae-red-hover);
+  --secondary: var(--ae-surface-muted);
+  --secondary-foreground: var(--ae-ink);
+  --muted: var(--ae-surface-muted);
+  --muted-foreground: var(--ae-muted);
+  --accent: var(--ae-red);
+  --accent-foreground: var(--ae-white);
+  --destructive: var(--ae-red);
   --destructive-foreground: var(--ae-white);
-  --border: #d7d0c4;
-  --input: #d7d0c4;
-  --ring: var(--ae-gilt);
+  --border: var(--ae-border-soft);
+  --input: var(--ae-border-soft);
+  --ring: var(--ae-red);
   --radius: 0.5rem;
   --ae-space-section: clamp(4.5rem, 11vw, 9rem);
-  --ae-shadow-card: 0 18px 48px rgba(25, 43, 30, 0.08);
-  --ae-shadow-drawer: -24px 0 56px rgba(14, 14, 14, 0.2);
+  --ae-shadow-card: 0 18px 48px rgba(0, 0, 0, 0.06);
+  --ae-shadow-drawer: -24px 0 56px rgba(0, 0, 0, 0.18);
   --ae-duration-fast: 160ms;
   --ae-duration-base: 280ms;
   --ae-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -81,9 +93,7 @@ html {
 body {
   min-height: 100%;
   margin: 0;
-  background:
-    linear-gradient(180deg, rgba(243, 239, 231, 0.98), rgba(243, 239, 231, 1)),
-    var(--background);
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), Arial, sans-serif;
   text-rendering: optimizeLegibility;
@@ -91,8 +101,8 @@ body {
 }
 
 ::selection {
-  background: rgba(160, 139, 90, 0.35);
-  color: var(--ae-onyx);
+  background: color-mix(in srgb, var(--ae-red) 28%, transparent);
+  color: var(--ae-ink);
 }
 
 a {
@@ -116,11 +126,11 @@ img {
 }
 
 .focus-ring:focus-visible {
-  box-shadow: 0 0 0 3px rgba(160, 139, 90, 0.45);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ae-red) 40%, transparent);
 }
 
 .ae-surface {
-  background: color-mix(in srgb, var(--ae-white) 78%, transparent);
+  background: color-mix(in srgb, var(--ae-white) 88%, transparent);
   box-shadow: var(--ae-shadow-card);
 }
 
@@ -141,7 +151,7 @@ img {
 }
 
 .ae-kicker {
-  color: var(--ae-gilt);
+  color: var(--ae-red);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.13em;
@@ -161,7 +171,7 @@ img {
 .ae-rich-text h2,
 .ae-rich-text h3,
 .ae-rich-text h4 {
-  color: var(--ae-forest);
+  color: var(--ae-ink);
   font-family: var(--font-cormorant), Georgia, serif;
   font-weight: 500;
   line-height: 1;
@@ -170,8 +180,8 @@ img {
 .ae-rich-text h2 { font-size: clamp(2.25rem, 6vw, 3.75rem); }
 .ae-rich-text h3 { font-size: clamp(1.75rem, 4vw, 2.5rem); }
 .ae-rich-text blockquote {
-  border-left: 2px solid var(--ae-gilt);
-  color: var(--ae-forest);
+  border-left: 2px solid var(--ae-red);
+  color: var(--ae-ink);
   font-family: var(--font-cormorant), Georgia, serif;
   font-size: 1.75rem;
   line-height: 1.2;
@@ -182,9 +192,9 @@ img {
 .ae-rich-text ul { list-style: disc; }
 .ae-rich-text ol { list-style: decimal; }
 .ae-rich-text a {
-  color: var(--ae-forest);
+  color: var(--ae-ink);
   text-decoration: underline;
-  text-decoration-color: var(--ae-gilt);
+  text-decoration-color: var(--ae-red);
   text-underline-offset: 0.25rem;
 }
 

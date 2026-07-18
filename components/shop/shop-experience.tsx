@@ -226,7 +226,7 @@ export function ShopExperience({ facets, notice, query, result }: ShopExperience
   return (
     <main id="main-content" className="min-h-screen bg-[var(--ae-parchment)] pt-16">
       <section className="relative overflow-hidden bg-[var(--ae-forest)] text-[var(--ae-white)]">
-        <div aria-hidden="true" className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_82%_18%,rgba(160,139,90,.65),transparent_28%),linear-gradient(120deg,transparent_45%,rgba(255,250,242,.08))]" />
+        <div aria-hidden="true" className="absolute inset-0 opacity-30 [background-image:radial-gradient(circle_at_82%_18%,rgba(214,39,39,.45),transparent_28%),linear-gradient(120deg,transparent_45%,rgba(255,255,255,.08))]" />
         <div className="ae-container relative grid min-h-[27rem] content-end gap-10 py-16 md:grid-cols-[1fr_0.7fr] md:items-end md:pb-20 md:pt-24">
           <motion.div
             initial={reducedMotion ? false : { opacity: 0, y: 22 }}
@@ -399,7 +399,7 @@ function ProductCard({ index, list, onQuickAdd, onQuickView, onWishlist, product
         <button type="button" onClick={onWishlist} aria-pressed={saved} aria-label={saved ? `Remove ${product.name} from wishlist` : `Save ${product.name} to wishlist`} className="focus-ring absolute right-3 top-3 grid size-10 place-items-center rounded-full bg-[rgba(255,250,242,.9)] text-[var(--ae-forest)] shadow-sm transition hover:scale-105">
           <Heart className={cn("size-4", saved && "fill-current")} aria-hidden="true" />
         </button>
-        {product.isFeatured ? <span className="absolute left-3 top-3 rounded-full bg-[var(--ae-forest)] px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-white">Featured</span> : null}
+        {product.isFeatured ? <span className="absolute left-3 top-3 rounded-full bg-[var(--ae-red)] px-3 py-1.5 text-[0.65rem] font-semibold uppercase tracking-wider text-white">Featured</span> : null}
       </div>
       <div className={cn("mt-4", list && "mt-0")}>
         <div className="flex items-start justify-between gap-4">

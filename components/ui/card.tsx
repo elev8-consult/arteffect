@@ -18,7 +18,7 @@ export function Card({
       className={cn(
         "rounded-lg border border-[var(--border)] bg-[var(--ae-white)] transition-[border-color,transform,box-shadow] duration-[var(--ae-duration-base)] ease-[var(--ae-ease-out)]",
         interactive && "hover:-translate-y-0.5 hover:border-[var(--ae-stone)] hover:shadow-[var(--ae-shadow-card)]",
-        selected && "border-[var(--ae-gilt)] shadow-[0_0_0_1px_rgba(160,139,90,0.18)]",
+        selected && "border-[var(--ae-gilt)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--ae-red)_22%,transparent)]",
         className
       )}
       {...props}

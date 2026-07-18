@@ -15,6 +15,11 @@ describe("editorial design-system contracts", () => {
     const css = await source("app", "globals.css");
 
     for (const token of [
+      "--ae-canvas",
+      "--ae-ink",
+      "--ae-red",
+      "--ae-red-hover",
+      "--ae-border-soft",
       "--ae-forest",
       "--ae-parchment",
       "--ae-fog",
@@ -29,6 +34,12 @@ describe("editorial design-system contracts", () => {
       assert.match(css, new RegExp(`${token}:`));
     }
 
+    assert.match(css, /--ae-canvas:\s*#f3f3f3/i);
+    assert.match(css, /--ae-ink:\s*#000000/i);
+    assert.match(css, /--ae-red:\s*#d62727/i);
+    assert.match(css, /--ae-red-hover:\s*#a81f1f/i);
+    assert.match(css, /--ae-border-soft:\s*#e5e5e5/i);
+
     assert.match(css, /\.focus-ring:focus-visible\s*\{[\s\S]*box-shadow:/);
     assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
     assert.match(css, /transition-duration:\s*0\.01ms !important/);
@@ -42,7 +53,8 @@ describe("editorial design-system contracts", () => {
       assert.match(button, new RegExp(`${variant}:`));
     }
 
-    assert.match(button, /hover:bg-/);
+    assert.match(button, /hover:bg-\[var\(--ae-red-hover\)\]/);
+    assert.match(button, /bg-\[var\(--ae-red\)\]/);
     assert.match(button, /active:translate-y-px/);
     assert.match(button, /disabled:pointer-events-none/);
     assert.match(button, /disabled:opacity-45/);
