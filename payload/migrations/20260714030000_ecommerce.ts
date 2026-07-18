@@ -233,6 +233,13 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
       "products_id" integer
     );
 
+    ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "carts_id" integer;
+    ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "orders_id" integer;
+    ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "coupons_id" integer;
+    ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "shipping_methods_id" integer;
+    ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "transactions_id" integer;
+    ALTER TABLE "payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "inventory_movements_id" integer;
+
     DO $$ BEGIN ALTER TABLE "coupons_rels" ADD CONSTRAINT "coupons_rels_parent_fk" FOREIGN KEY ("parent_id") REFERENCES "coupons"("id") ON DELETE cascade; EXCEPTION WHEN duplicate_object THEN null; END $$;
     DO $$ BEGIN ALTER TABLE "coupons_rels" ADD CONSTRAINT "coupons_rels_products_fk" FOREIGN KEY ("products_id") REFERENCES "products"("id") ON DELETE cascade; EXCEPTION WHEN duplicate_object THEN null; END $$;
     DO $$ BEGIN ALTER TABLE "shipping_methods_countries" ADD CONSTRAINT "shipping_methods_countries_parent_fk" FOREIGN KEY ("_parent_id") REFERENCES "shipping_methods"("id") ON DELETE cascade; EXCEPTION WHEN duplicate_object THEN null; END $$;

@@ -247,6 +247,10 @@ describe("Commerce backend", () => {
     assert.match(migration, /CREATE TABLE IF NOT EXISTS "orders"/);
     assert.match(migration, /CREATE TABLE IF NOT EXISTS "transactions"/);
     assert.match(migration, /CREATE TABLE IF NOT EXISTS "inventory_movements"/);
+    assert.match(
+      await readText("payload/migrations/20260718000000_locked_documents_commerce_rels.ts"),
+      /ADD COLUMN IF NOT EXISTS "carts_id"/
+    );
     assert.match(users, /name:\s*"role"[\s\S]*?value:\s*"admin"[\s\S]*?value:\s*"customer"/);
     assert.match(access, /isAdmin/);
     assert.doesNotMatch(config, /arteffect-local-payload-secret/);
