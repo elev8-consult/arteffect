@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 
 import { staticArtistProfiles } from "@/data/artists";
+import { mediaUrl as resolveSharedMediaUrl, normalizeMediaSrc } from "@/lib/cms/content-utils";
 import { hasPayloadDatabase } from "@/lib/cms/env";
 import { getPayloadClient } from "@/lib/cms/payload";
 import { getShopProducts } from "@/lib/cms/products";
@@ -228,7 +229,10 @@ function toDirectoryItem(profile: ArtistProfile): ArtistDirectoryItem {
 
 function documentImage(doc: CmsRecord, fallbackAlt: string): ArtistImage {
   const media = record(doc.image);
-  return { alt: text(doc.imageAlt, text(media.alt, fallbackAlt)), src: mediaUrl(media) || text(doc.externalImageUrl, "") };
+  return {
+    alt: text(doc.imageAlt, text(media.alt, fallbackAlt)),
+    src: mediaUrl(media) || normalizeMediaSrc(text(doc.externalImageUrl, "")) || ""
+  };
 }
 
 function mediaImage(media: CmsRecord, fallbackAlt: string): ArtistImage {
@@ -236,7 +240,7 @@ function mediaImage(media: CmsRecord, fallbackAlt: string): ArtistImage {
 }
 
 function mediaUrl(media: CmsRecord) {
-  return optionalText(media.url) ?? (optionalText(media.filename) ? `/media/${media.filename}` : undefined);
+  return resolveSharedMediaUrl(media);
 }
 
 function records(value: unknown): CmsRecord[] { return Array.isArray(value) ? value.map(record) : []; }

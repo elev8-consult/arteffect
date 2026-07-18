@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 
 import { staticShowcaseContent } from "@/data/showcase";
+import { mediaUrl as resolveMediaUrl, normalizeMediaSrc } from "@/lib/cms/content-utils";
 import { hasPayloadDatabase } from "@/lib/cms/env";
 import { getPayloadClient } from "@/lib/cms/payload";
 import { getShopProducts, mapShopProduct } from "@/lib/cms/products";
@@ -118,6 +119,7 @@ function staticDropShowcase(): DropShowcase {
     ],
     artist,
     artwork,
+    artworks: [artwork],
     batchSize: drop.batchSize,
     cause,
     closesAt: "2026-08-31T23:59:59.000Z",
@@ -185,13 +187,16 @@ function mapDropShowcase(doc: CmsRecord, products: ShopProduct[]): DropShowcase 
   const seo = record(doc.seo);
   const cta = record(doc.cta);
   const artist = requiredRelationship(doc.artist, "name");
-  const artwork = requiredRelationship(doc.artwork, "title");
+  const artworkDocs = relationshipList(doc.artworks ?? doc.artwork, "title");
+  const artwork = artworkDocs[0];
+  if (!artwork) throw new DropNotFoundError();
   const cause = requiredRelationship(doc.cause, "name");
 
   return {
     allocation: records(doc.allocation).map(mapAllocation),
     artist: mapArtist(artist),
     artwork: mapArtwork(artwork),
+    artworks: artworkDocs.map(mapArtwork),
     batchSize,
     cause: mapCause(cause),
     closesAt: validDate(doc.closesAt),
@@ -276,13 +281,18 @@ function requiredRelationship(value: unknown, titleField: "name" | "title") {
   return item;
 }
 
+function relationshipList(value: unknown, titleField: "name" | "title") {
+  const items = Array.isArray(value) ? value : value ? [value] : [];
+  return items
+    .map((item) => record(item))
+    .filter((item) => optionalText(item.slug) && optionalText(item[titleField]));
+}
+
 function imageUrl(doc: CmsRecord, fallback: string) {
   const image = record(doc.image);
-  const url = optionalText(image.url);
-  if (url) return url;
-  const filename = optionalText(image.filename);
-  if (filename) return `/media/${filename}`;
-  return text(doc.externalImageUrl, fallback);
+  return resolveMediaUrl(image)
+    || normalizeMediaSrc(text(doc.externalImageUrl, fallback))
+    || fallback;
 }
 
 function records(value: unknown): CmsRecord[] { return Array.isArray(value) ? value.map(record) : []; }

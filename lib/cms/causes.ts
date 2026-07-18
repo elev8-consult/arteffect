@@ -2,6 +2,7 @@ import { unstable_noStore as noStore } from "next/cache";
 
 import { staticCauseProfiles } from "@/data/causes";
 import { normalizeExternalUrl } from "@/lib/artist-links";
+import { mediaUrl as resolveSharedMediaUrl, normalizeMediaSrc } from "@/lib/cms/content-utils";
 import { hasPayloadDatabase } from "@/lib/cms/env";
 import { getPayloadClient } from "@/lib/cms/payload";
 import { getShopProducts } from "@/lib/cms/products";
@@ -215,11 +216,14 @@ function uniqueImages(images: CauseImage[]) {
 
 function documentImage(doc: CmsRecord, fallbackAlt: string): CauseImage {
   const media = record(doc.image);
-  return { alt: text(doc.imageAlt, text(media.alt, fallbackAlt)), src: mediaUrl(media) || text(doc.externalImageUrl, "") };
+  return {
+    alt: text(doc.imageAlt, text(media.alt, fallbackAlt)),
+    src: mediaUrl(media) || normalizeMediaSrc(text(doc.externalImageUrl, "")) || ""
+  };
 }
 
 function mediaUrl(media: CmsRecord) {
-  return optionalText(media.url) ?? (optionalText(media.filename) ? `/media/${media.filename}` : undefined);
+  return resolveSharedMediaUrl(media);
 }
 
 function verificationStatus(value: unknown): CauseDirectoryItem["verificationStatus"] {

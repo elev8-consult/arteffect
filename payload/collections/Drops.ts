@@ -112,8 +112,12 @@ export const Drops: CollectionConfig = {
       name: "artwork",
       type: "relationship",
       relationTo: "artworks",
+      hasMany: true,
       required: true,
-      label: "Design or artwork"
+      label: "Designs or artworks",
+      admin: {
+        description: "Select one or more artworks for this batch. The first artwork is featured in the main artwork section."
+      }
     },
     {
       name: "cause",

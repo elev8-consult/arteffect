@@ -332,16 +332,54 @@ function imageUrl(doc: CmsRecord, fallback: string) {
   const url = text(image.url, "");
 
   if (url) {
-    return url;
+    return normalizeShowcaseMediaSrc(url) || url;
   }
 
   const filename = text(image.filename, "");
 
   if (filename) {
-    return `/media/${filename}`;
+    return normalizeShowcaseMediaSrc(`/media/${filename}`) || `/media/${filename}`;
   }
 
-  return text(doc.externalImageUrl, fallback);
+  return normalizeShowcaseMediaSrc(text(doc.externalImageUrl, fallback)) || text(doc.externalImageUrl, fallback);
+}
+
+function normalizeShowcaseMediaSrc(value: string) {
+  if (!value.trim()) return "";
+
+  let src = value.trim();
+
+  try {
+    if (/^https?:\/\//i.test(src)) {
+      const parsed = new URL(src);
+      const path = parsed.pathname || "/";
+      if (path === "/media" || path.startsWith("/media/") || path.startsWith("/api/media/")) {
+        src = `${path}${parsed.search || ""}`;
+      } else {
+        return src;
+      }
+    }
+  } catch {
+    return "";
+  }
+
+  if (!src.startsWith("/")) return src;
+
+  const [pathname, query = ""] = src.split("?");
+  const encodedPath = pathname
+    .split("/")
+    .map((segment, index) => {
+      if (index === 0) return "";
+      if (!segment) return "";
+      try {
+        return encodeURIComponent(decodeURIComponent(segment));
+      } catch {
+        return encodeURIComponent(segment);
+      }
+    })
+    .join("/");
+
+  return query ? `${encodedPath}?${query}` : encodedPath;
 }
 
 function array<T>(value: unknown, fallback: T[]): Array<CmsRecord | string> {

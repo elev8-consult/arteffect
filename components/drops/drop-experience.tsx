@@ -79,6 +79,27 @@ export function DropExperience({ drop }: DropExperienceProps) {
           <div className="relative aspect-[4/5] overflow-hidden bg-[var(--ae-stone)]">{drop.artwork.image ? <Image src={drop.artwork.image} alt={drop.artwork.imageAlt} fill sizes="(max-width: 1024px) 100vw, 55vw" className="object-cover" /> : null}</div>
           <div className="lg:pl-8"><SectionHeading eyebrow="02 / The artwork" title={drop.artwork.title} body={drop.artwork.summary} /><p className="mt-6 text-sm font-medium text-[var(--ae-forest)]">{drop.artwork.artistLine}</p><div className="mt-9 divide-y divide-[var(--border)] border-y border-[var(--border)]">{drop.artwork.details.map((detail, index) => <div key={`${detail.label}-${detail.title}`} className="grid grid-cols-[2rem_1fr] gap-4 py-4"><span className="text-xs font-semibold text-[var(--ae-gilt)]">{detail.label || String(index + 1).padStart(2, "0")}</span><div><h3 className="font-medium text-[var(--ae-forest)]">{detail.title}</h3><p className="mt-1 text-sm leading-6 text-[var(--muted-foreground)]">{detail.body}</p></div></div>)}</div></div>
         </motion.div>
+        {drop.artworks.length > 1 ? (
+          <motion.div {...reveal} className="ae-container mt-12">
+            <p className="text-xs font-semibold uppercase tracking-[.15em] text-[var(--ae-gilt)]">More from this batch</p>
+            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {drop.artworks.slice(1).map((item) => (
+                <article key={item.title} className="overflow-hidden border border-[var(--border)] bg-[var(--ae-white)]">
+                  <div className="relative aspect-[4/5] bg-[var(--ae-fog)]">
+                    {item.image ? (
+                      <Image src={item.image} alt={item.imageAlt} fill sizes="(max-width: 640px) 100vw, 33vw" className="object-cover" />
+                    ) : null}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="ae-display text-3xl font-medium leading-none text-[var(--ae-forest)]">{item.title}</h3>
+                    <p className="mt-3 text-sm text-[var(--muted-foreground)]">{item.artistLine}</p>
+                    <p className="mt-4 text-sm leading-6 text-[var(--muted-foreground)]">{item.summary}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </motion.div>
+        ) : null}
       </section>
 
       <section id="artist" className="bg-[var(--ae-forest)] py-[var(--ae-space-section)] text-[var(--ae-white)] scroll-mt-16">

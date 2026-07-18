@@ -81,7 +81,7 @@ describe("Drop editorial showcase", () => {
     assert.match(collection, /name: "closesAt"[\s\S]*?required: true/);
     assert.match(collection, /name: "products"[\s\S]*?relationTo: "products"[\s\S]*?hasMany: true/);
     assert.match(collection, /relationTo: "artists"[\s\S]*?required: true/);
-    assert.match(collection, /relationTo: "artworks"[\s\S]*?required: true/);
+    assert.match(collection, /relationTo: "artworks"[\s\S]*?hasMany: true[\s\S]*?required: true/);
     assert.match(collection, /relationTo: "causes"[\s\S]*?required: true/);
     assert.match(collection, /name: "milestones"[\s\S]*?minRows: 1/);
     assert.match(collection, /name: "allocation"[\s\S]*?percentage[\s\S]*?max: 100/);

@@ -1,5 +1,42 @@
 import { withPayload } from "@payloadcms/next/withPayload";
 
+function imageRemotePatterns() {
+  /** @type {import('next').NextConfig['images']} */
+  const patterns = [
+    {
+      protocol: "https",
+      hostname: "images.unsplash.com"
+    }
+  ];
+
+  const candidates = [
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.RAILWAY_PUBLIC_DOMAIN
+      ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+      : undefined
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const normalized = /^https?:\/\//i.test(candidate.trim())
+        ? candidate.trim()
+        : `https://${candidate.trim()}`;
+      const url = new URL(normalized);
+      if (!patterns.some((pattern) => pattern.hostname === url.hostname)) {
+        patterns.push({
+          protocol: url.protocol.replace(":", ""),
+          hostname: url.hostname
+        });
+      }
+    } catch {
+      // Ignore invalid site URL during config load.
+    }
+  }
+
+  return patterns;
+}
+
 const storefrontContentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -75,12 +112,7 @@ const nextConfig = {
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 86400,
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com"
-      }
-    ]
+    remotePatterns: imageRemotePatterns()
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"]

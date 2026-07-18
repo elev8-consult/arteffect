@@ -1,6 +1,7 @@
 import { unstable_noStore as noStore } from "next/cache";
 
 import { products as showcaseProducts } from "@/data/showcase";
+import { mediaUrl as resolveMediaUrl, normalizeMediaSrc } from "@/lib/cms/content-utils";
 import { hasPayloadDatabase } from "@/lib/cms/env";
 import { getPayloadClient } from "@/lib/cms/payload";
 import { productSort, productWhere } from "@/lib/shop/query";
@@ -443,13 +444,9 @@ function timestamp(value: unknown) {
 
 function imageUrl(doc: CmsRecord) {
   const image = record(doc.image);
-  const url = text(image.url, "");
-  if (url) return url;
-
-  const filename = text(image.filename, "");
-  if (filename) return `/media/${filename}`;
-
-  return text(doc.externalImageUrl, "");
+  return resolveMediaUrl(image)
+    || normalizeMediaSrc(text(doc.externalImageUrl, ""))
+    || "";
 }
 
 function formatDisplayPrice(min: number, max: number, currency: string) {

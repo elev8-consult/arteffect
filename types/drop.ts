@@ -25,6 +25,7 @@ export type DropShowcase = {
   allocation: DropAllocation[];
   artist: Artist;
   artwork: Artwork;
+  artworks: Artwork[];
   batchSize: number;
   cause: Cause;
   closesAt?: string;
